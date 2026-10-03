@@ -489,6 +489,7 @@ router.post('/bulk-upload', authenticateToken, (req, res) => {
           : systemTaxRate;
         const difference = Math.max(0, sellingPrice - pCost);
         const taxAmount = Math.round((difference * (tRate / 100)) * 100) / 100;
+        const finalPrice = Math.max(0, (sellingPrice + taxAmount) - disc);
         let internalId = `ECO-PH-${String(nextSeq++).padStart(5, '0')}`;
         while (db.prepare(`SELECT 1 FROM phone_inventory WHERE internal_product_id = ?`).get(internalId)) {
           internalId = `ECO-PH-${String(nextSeq++).padStart(5, '0')}`;

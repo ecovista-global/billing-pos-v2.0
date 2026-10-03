@@ -164,8 +164,13 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
                         ) : (
                           <>
                             <div className="text-[9px] text-slate-600">IMEI: {item.imei1}</div>
-                            <div className="flex justify-between">
-                              <span>Grade: {item.condition_grade}</span>
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[8px] font-bold uppercase bg-amber-100 text-amber-900 border border-amber-300 px-1 py-0.2 rounded leading-tight">
+                                  Refurbished
+                                </span>
+                                <span className="font-mono text-[9px] font-semibold text-slate-700">HSN: {item.hsn_code || '8517'}</span>
+                              </div>
                               <span className="font-bold text-slate-900">{formatCurrency(item.final_price)}</span>
                             </div>
                           </>
@@ -333,7 +338,7 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
                       <tr className="border-b border-slate-300 bg-slate-100 text-slate-700 uppercase text-[9.5px] tracking-wider font-bold">
                         <th className="py-1.5 px-1.5 text-center w-7">#</th>
                         <th className="py-1.5 px-1.5">Item Description & Details</th>
-                        <th className="py-1.5 px-1.5 text-center w-20">Condition</th>
+                        <th className="py-1.5 px-1.5 text-center w-28">HSN / Category</th>
                         <th className="py-1.5 px-1.5 text-center w-8">Qty</th>
                         <th className="py-1.5 px-1.5 text-right w-20">Unit Price</th>
                         <th className="py-1.5 px-1.5 text-right w-14">Disc.</th>
@@ -379,13 +384,16 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
                             </td>
                             <td className="py-1.5 px-1.5 text-center">
                               {isAccessory ? (
-                                <span className="px-1 py-0.2 rounded bg-emerald-50 text-emerald-800 font-bold text-[9px] border border-emerald-200 inline-block">
-                                  Brand New
-                                </span>
+                                <span className="text-slate-300 font-mono text-xs">—</span>
                               ) : (
-                                <span className="px-1 py-0.2 rounded bg-slate-100 text-slate-700 font-semibold text-[9px] border border-slate-200 inline-block">
-                                  {item.condition_grade}
-                                </span>
+                                <div className="flex flex-col items-center justify-center gap-0.5">
+                                  <span className="px-1.5 py-0.5 text-[8px] font-extrabold uppercase rounded bg-amber-50 text-amber-800 border border-amber-300 inline-block leading-none tracking-wide">
+                                    Refurbished
+                                  </span>
+                                  <span className="font-mono text-[10.5px] font-bold text-slate-800 tracking-wider">
+                                    {item.hsn_code || '8517'}
+                                  </span>
+                                </div>
                               )}
                             </td>
                             <td className="py-1.5 px-1.5 text-center font-bold text-slate-800 text-xs">
@@ -439,7 +447,6 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
                         <div className="font-semibold text-slate-800">{exchange.brand} {exchange.model} {exchange.variant ? `(${exchange.variant})` : ''}</div>
                         <div className="text-[8.5px] text-slate-600">
                           IMEI: <span className="font-mono font-bold text-slate-800">{exchange.imei1}</span>
-                          {exchange.condition_grade ? ` • Grade: ${exchange.condition_grade}` : ''}
                         </div>
                         <div className="text-[8.5px] font-bold text-emerald-700 mt-0.5">
                           Credit: {formatCurrency(sale.exchange_amount)}
