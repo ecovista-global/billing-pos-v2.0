@@ -493,37 +493,32 @@ export default function AccessoryBulkUploadModal({ isOpen, onClose, stores = [],
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
       <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
         
-        {/* Modal Top Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-900 text-white rounded-t-2xl">
+        {/* Modal Header */}
+        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-white text-slate-900 rounded-t-2xl">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-500/20 text-emerald-400 rounded-xl border border-emerald-500/30">
+            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100">
               <FileSpreadsheet className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-white">Bulk Upload Accessories</h2>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase tracking-wider flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" /> Brand New • 18% GST-Inclusive
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Import dozens or hundreds of brand-new accessories at once via Excel (.xlsx, .xls) or CSV.
+              <h2 className="text-base font-bold text-slate-900">Bulk Upload Accessories</h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Import dozens or hundreds of accessories at once via Excel (.xlsx, .xls) or CSV.
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"
+            className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Modal Body */}
+        {}
         <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/50">
           
-          {/* Rules Banner */}
+          {}
           <div className="p-3.5 bg-indigo-50/70 border border-indigo-100 rounded-xl flex items-start gap-3 text-xs text-indigo-950 leading-relaxed">
             <Info className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
             <div>
@@ -535,7 +530,7 @@ export default function AccessoryBulkUploadModal({ isOpen, onClose, stores = [],
             </div>
           </div>
 
-          {/* Top Options: Store, Supplier, and Template Download */}
+          {}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
             <div>
               <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">
@@ -588,7 +583,7 @@ export default function AccessoryBulkUploadModal({ isOpen, onClose, stores = [],
             </div>
           </div>
 
-          {/* Drag & Drop Upload Box */}
+          {}
           <div
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
@@ -635,7 +630,7 @@ export default function AccessoryBulkUploadModal({ isOpen, onClose, stores = [],
             </div>
           </div>
 
-          {/* Parse Error */}
+          {}
           {parseError && (
             <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
@@ -643,7 +638,7 @@ export default function AccessoryBulkUploadModal({ isOpen, onClose, stores = [],
             </div>
           )}
 
-          {/* Parsed Rows Preview Table */}
+          {}
           {parsedRows.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -766,7 +761,7 @@ export default function AccessoryBulkUploadModal({ isOpen, onClose, stores = [],
             </div>
           )}
 
-          {/* Upload Success Results Banner */}
+          {}
           {uploadResult && (
             <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl space-y-2 animate-in fade-in">
               <div className="flex items-center gap-2 text-emerald-900 font-bold text-sm">
@@ -786,7 +781,7 @@ export default function AccessoryBulkUploadModal({ isOpen, onClose, stores = [],
 
         </div>
 
-        {/* Modal Bottom Actions */}
+        {}
         <div className="px-6 py-4 border-t border-slate-200 bg-white rounded-b-2xl flex items-center justify-between">
           <div className="text-xs text-slate-500">
             {parsedRows.length > 0 && (

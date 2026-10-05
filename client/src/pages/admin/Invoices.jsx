@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Receipt, Search, Eye, Ban, Printer, Building2, Calendar, FileText, X } from 'lucide-react';
+import { Receipt, Search, Eye, Ban, Printer, Building2, Calendar, FileText, X, Trash2 } from 'lucide-react';
 import { apiFetch } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency, formatDateTime, getStatusBadge } from '../../utils/formatters';
@@ -81,9 +81,34 @@ export default function Invoices() {
     }
   };
 
+  const handleDeleteInvoice = async (sale) => {
+    const confirmDelete = window.confirm(
+      `Are you sure you want to permanently delete this Tax Invoice?\n\n` +
+      `Invoice #: ${sale.invoice_number}\n` +
+      `Customer: ${sale.customer_name || 'N/A'}\n` +
+      `Amount: ${formatCurrency(sale.grand_total)}\n\n` +
+      `This will completely remove the bill, payments, warranty, and sale records without restrictions.`
+    );
+    if (!confirmDelete) return;
+
+    try {
+      const res = await apiFetch(`/sales/${sale.id}`, {
+        method: 'DELETE'
+      });
+      if (res.success) {
+        alert(res.message || 'Invoice deleted permanently.');
+        fetchSales();
+      } else {
+        alert(res.message || 'Failed to delete invoice.');
+      }
+    } catch (err) {
+      alert(err.message || 'Error occurred while deleting invoice.');
+    }
+  };
+
   return (
     <div className="space-y-5">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
         <div>
           <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
@@ -96,7 +121,7 @@ export default function Invoices() {
         </div>
       </div>
 
-      {/* Filter Bar */}
+      {}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row gap-3 text-xs">
         <div className="relative flex-1">
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -127,7 +152,7 @@ export default function Invoices() {
         </div>
       </div>
 
-      {/* Invoices Table */}
+      {}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         {loading ? (
           <div className="py-16 text-center text-slate-400 text-xs">Loading billing archives...</div>
@@ -206,10 +231,20 @@ export default function Invoices() {
                           {isAdmin && sale.status === 'COMPLETED' && (
                             <button
                               onClick={() => setVoidSale(sale)}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                              className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition"
                               title="Void Invoice"
                             >
                               <Ban className="w-4 h-4" />
+                            </button>
+                          )}
+
+                          {isAdmin && (
+                            <button
+                              onClick={() => handleDeleteInvoice(sale)}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                              title="Delete Bill Permanently"
+                            >
+                              <Trash2 className="w-4 h-4" />
                             </button>
                           )}
                         </div>
@@ -222,7 +257,7 @@ export default function Invoices() {
           </div>
         )}
 
-        {/* Pagination Bar */}
+        {}
         <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
           <span>Page {page} of {totalPages}</span>
           <div className="flex items-center gap-1.5">
@@ -244,7 +279,7 @@ export default function Invoices() {
         </div>
       </div>
 
-      {/* Invoice Viewer Modal */}
+      {}
       {selectedInvoiceData && (
         <InvoiceModal
           invoiceData={selectedInvoiceData}
@@ -252,7 +287,7 @@ export default function Invoices() {
         />
       )}
 
-      {/* Void Invoice Confirmation Modal */}
+      {}
       {voidSale && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-sm w-full p-6 text-xs space-y-4">

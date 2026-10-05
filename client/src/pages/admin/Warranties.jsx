@@ -49,7 +49,7 @@ export default function Warranties() {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
         <div>
           <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
@@ -62,9 +62,9 @@ export default function Warranties() {
         </div>
       </div>
 
-      {/* Instant Warranty Lookup Bar */}
-      <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-6 rounded-2xl text-white shadow-md">
-        <h3 className="text-sm font-bold text-slate-200 mb-2">Check Device Warranty Coverage</h3>
+      {/* Search Bar Panel */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+        <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">Check Device Warranty Coverage</h3>
         <form onSubmit={handleSearch} className="flex gap-2 max-w-2xl">
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -74,20 +74,20 @@ export default function Warranties() {
               placeholder="Enter 15-digit IMEI, Invoice # (e.g. ECO-2026-000001), or customer phone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+              className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
             />
           </div>
           <button
             type="submit"
             disabled={searching}
-            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition shadow-sm"
+            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition shadow-xs"
           >
             {searching ? 'Checking...' : 'Verify Status'}
           </button>
         </form>
       </div>
 
-      {/* Results / List */}
+      {}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="p-4 border-b border-slate-200 flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-600">

@@ -121,7 +121,7 @@ export default function Stores() {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
         <div>
           <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
@@ -144,7 +144,7 @@ export default function Stores() {
         </div>
       </div>
 
-      {/* Search */}
+      {}
       <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs max-w-md">
         <div className="relative">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -158,7 +158,7 @@ export default function Stores() {
         </div>
       </div>
 
-      {/* Stores Grid */}
+      {}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredStores.map(store => (
           <div key={store.id} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between">
@@ -181,7 +181,7 @@ export default function Stores() {
                 </span>
               </div>
 
-              {/* Metrics */}
+              {}
               <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-slate-100 text-xs text-center">
                 <div className="p-2 rounded-lg bg-slate-50 border border-slate-100">
                   <span className="text-slate-400 text-[10px] font-bold uppercase block">Stock</span>
@@ -197,7 +197,7 @@ export default function Stores() {
                 </div>
               </div>
 
-              {/* Revenue & Profit */}
+              {}
               <div className="mt-3 p-2.5 rounded-xl bg-emerald-50/50 border border-emerald-100 flex items-center justify-between text-xs">
                 <div>
                   <span className="text-[10px] text-slate-500 block">Total Revenue</span>
@@ -209,7 +209,7 @@ export default function Stores() {
                 </div>
               </div>
 
-              {/* Contact info */}
+              {}
               <div className="mt-3 text-[11px] text-slate-400 space-y-0.5">
                 {store.phone && <div className="flex items-center gap-1.5"><Phone className="w-3 h-3" /> {store.phone}</div>}
                 {store.manager && <div>Manager: <strong className="text-slate-600">{store.manager}</strong></div>}
@@ -229,7 +229,7 @@ export default function Stores() {
         ))}
       </div>
 
-      {/* Add / Edit Store Modal */}
+      {}
       {showModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-lg w-full p-6 text-xs space-y-4">

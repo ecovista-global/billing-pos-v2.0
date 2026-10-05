@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Wallet, Plus, Trash2, Building2, Calendar, Tag, X } from 'lucide-react';
 import { apiFetch } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { useStoreContext } from '../../context/StoreContext';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 
 export default function Expenses() {
@@ -12,7 +13,7 @@ export default function Expenses() {
   const [loading, setLoading] = useState(true);
 
   // Filters
-  const [selectedStore, setSelectedStore] = useState('');
+  const { selectedStoreId } = useStoreContext();
   const [selectedCategory, setSelectedCategory] = useState('');
 
   // Add Modal
@@ -31,7 +32,7 @@ export default function Expenses() {
     setLoading(true);
     try {
       let q = '/expenses?';
-      if (selectedStore) q += `&store_id=${selectedStore}`;
+      if (selectedStoreId) q += `&store_id=${selectedStoreId}`;
       if (selectedCategory) q += `&category=${encodeURIComponent(selectedCategory)}`;
 
       const [expRes, storeRes] = await Promise.all([
@@ -53,7 +54,7 @@ export default function Expenses() {
 
   useEffect(() => {
     fetchExpenses();
-  }, [selectedStore, selectedCategory]);
+  }, [selectedStoreId, selectedCategory]);
 
   const handleAdd = async (e) => {
     e.preventDefault();
@@ -83,7 +84,7 @@ export default function Expenses() {
   };
 
   const totalExpenseSum = expenses.reduce((a, b) => a + (b.amount || 0), 0);
-  const currentStoreName = stores.find(s => String(s.id) === String(selectedStore))?.name;
+  const currentStoreName = stores.find(s => String(s.id) === String(selectedStoreId))?.name;
 
   const displayCategories = React.useMemo(() => {
     const list = [...categories];
@@ -99,7 +100,7 @@ export default function Expenses() {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
         <div>
           <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
@@ -120,7 +121,7 @@ export default function Expenses() {
         </button>
       </div>
 
-      {/* Category Totals */}
+      {}
       <div>
         <div className="flex items-center justify-between mb-2 px-1">
           <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
@@ -131,13 +132,10 @@ export default function Expenses() {
               <span className="text-slate-500">Category Breakdown — <strong className="text-slate-800">All Stores (Company-Wide)</strong></span>
             )}
           </span>
-          {selectedStore && (
-            <button
-              onClick={() => setSelectedStore('')}
-              className="text-[11px] text-emerald-600 hover:text-emerald-800 font-semibold cursor-pointer underline"
-            >
-              Reset to All Stores
-            </button>
+          {selectedStoreId && (
+            <span className="text-[11px] text-emerald-600 font-semibold cursor-pointer">
+              Store selected in header
+            </span>
           )}
         </div>
 
@@ -151,22 +149,11 @@ export default function Expenses() {
         </div>
       </div>
 
-      {/* Expenses Table */}
+      {}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between gap-3 text-xs">
           <div className="flex items-center gap-2">
-            {isAdmin && (
-              <select
-                value={selectedStore}
-                onChange={(e) => setSelectedStore(e.target.value)}
-                className="px-3 py-1.5 bg-slate-50 border rounded-lg"
-              >
-                <option value="">All Stores</option>
-                {stores.map(s => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
-            )}
+
 
             <select
               value={selectedCategory}
@@ -238,7 +225,7 @@ export default function Expenses() {
         </div>
       </div>
 
-      {/* Add Expense Modal */}
+      {}
       {showModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-md w-full p-6 text-xs space-y-4">

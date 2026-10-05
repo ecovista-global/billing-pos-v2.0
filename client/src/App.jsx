@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { StoreProvider } from './context/StoreContext';
 
 import Layout from './components/layout/Layout';
 import Login from './pages/auth/Login';
@@ -93,54 +94,56 @@ function RootRedirect() {
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
+      <StoreProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
 
-          {/* Protected Routes inside Main Layout */}
-          <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-            <Route index element={<RootRedirect />} />
+            {/* Protected Routes Wrapper */}
+            <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+              <Route index element={<RootRedirect />} />
 
-            {/* Admin Routes */}
-            <Route path="admin/dashboard" element={<ProtectedRoute requireAdmin><Dashboard /></ProtectedRoute>} />
-            <Route path="admin/stores" element={<ProtectedRoute requireAdmin><Stores /></ProtectedRoute>} />
-            <Route path="admin/employees" element={<ProtectedRoute requireAdmin><Employees /></ProtectedRoute>} />
-            <Route path="admin/inventory" element={<ProtectedRoute requireAdmin><Inventory /></ProtectedRoute>} />
-            <Route path="admin/accessories" element={<ProtectedRoute requireAdmin><Accessories /></ProtectedRoute>} />
-            <Route path="admin/purchases" element={<ProtectedRoute requireAdmin><Purchases /></ProtectedRoute>} />
-            <Route path="admin/stock-entry" element={<ProtectedRoute requireAdmin><Purchases /></ProtectedRoute>} />
-            <Route path="admin/transfers" element={<ProtectedRoute requireAdmin><Transfers /></ProtectedRoute>} />
-            <Route path="admin/pos" element={<ProtectedRoute requireAdmin><POS /></ProtectedRoute>} />
-            <Route path="admin/exchanged-phones" element={<ProtectedRoute requireAdmin><ExchangedPhones /></ProtectedRoute>} />
-            <Route path="admin/customers" element={<ProtectedRoute requireAdmin><Customers /></ProtectedRoute>} />
-            <Route path="admin/invoices" element={<ProtectedRoute requireAdmin><Invoices /></ProtectedRoute>} />
-            <Route path="admin/returns" element={<ProtectedRoute requireAdmin><Returns /></ProtectedRoute>} />
-            <Route path="admin/warranties" element={<ProtectedRoute requireAdmin><Warranties /></ProtectedRoute>} />
-            <Route path="admin/expenses" element={<ProtectedRoute requireAdmin><Expenses /></ProtectedRoute>} />
-            <Route path="admin/profit-loss" element={<ProtectedRoute requireAdmin><ProfitLoss /></ProtectedRoute>} />
-            <Route path="admin/reports" element={<ProtectedRoute requireAdmin><Reports /></ProtectedRoute>} />
-            <Route path="admin/audit-logs" element={<ProtectedRoute requireAdmin><AuditLogs /></ProtectedRoute>} />
-            <Route path="admin/settings" element={<ProtectedRoute requireAdmin><Settings /></ProtectedRoute>} />
+              {/* Admin Routes */}
+              <Route path="admin/dashboard" element={<ProtectedRoute requireAdmin><Dashboard /></ProtectedRoute>} />
+              <Route path="admin/stores" element={<ProtectedRoute requireAdmin><Stores /></ProtectedRoute>} />
+              <Route path="admin/employees" element={<ProtectedRoute requireAdmin><Employees /></ProtectedRoute>} />
+              <Route path="admin/inventory" element={<ProtectedRoute requireAdmin><Inventory /></ProtectedRoute>} />
+              <Route path="admin/accessories" element={<ProtectedRoute requireAdmin><Accessories /></ProtectedRoute>} />
+              <Route path="admin/purchases" element={<ProtectedRoute requireAdmin><Purchases /></ProtectedRoute>} />
+              <Route path="admin/stock-entry" element={<ProtectedRoute requireAdmin><Purchases /></ProtectedRoute>} />
+              <Route path="admin/transfers" element={<ProtectedRoute requireAdmin><Transfers /></ProtectedRoute>} />
+              <Route path="admin/pos" element={<ProtectedRoute requireAdmin><POS /></ProtectedRoute>} />
+              <Route path="admin/exchanged-phones" element={<ProtectedRoute requireAdmin><ExchangedPhones /></ProtectedRoute>} />
+              <Route path="admin/customers" element={<ProtectedRoute requireAdmin><Customers /></ProtectedRoute>} />
+              <Route path="admin/invoices" element={<ProtectedRoute requireAdmin><Invoices /></ProtectedRoute>} />
+              <Route path="admin/returns" element={<ProtectedRoute requireAdmin><Returns /></ProtectedRoute>} />
+              <Route path="admin/warranties" element={<ProtectedRoute requireAdmin><Warranties /></ProtectedRoute>} />
+              <Route path="admin/expenses" element={<ProtectedRoute requireAdmin><Expenses /></ProtectedRoute>} />
+              <Route path="admin/profit-loss" element={<ProtectedRoute requireAdmin><ProfitLoss /></ProtectedRoute>} />
+              <Route path="admin/reports" element={<ProtectedRoute requireAdmin><Reports /></ProtectedRoute>} />
+              <Route path="admin/audit-logs" element={<ProtectedRoute requireAdmin><AuditLogs /></ProtectedRoute>} />
+              <Route path="admin/settings" element={<ProtectedRoute requireAdmin><Settings /></ProtectedRoute>} />
 
-            {/* Employee Routes with moduleKey permissions guard */}
-            <Route path="employee/dashboard" element={<ProtectedRoute moduleKey="dashboard"><EmployeeDashboard /></ProtectedRoute>} />
-            <Route path="employee/pos" element={<ProtectedRoute moduleKey="pos"><POS /></ProtectedRoute>} />
-            <Route path="employee/exchanged-phones" element={<ProtectedRoute moduleKey="exchanged_phones"><ExchangedPhones /></ProtectedRoute>} />
-            <Route path="employee/inventory" element={<ProtectedRoute moduleKey="inventory"><Inventory /></ProtectedRoute>} />
-            <Route path="employee/accessories" element={<ProtectedRoute moduleKey="accessories"><Accessories /></ProtectedRoute>} />
-            <Route path="employee/stock-entry" element={<ProtectedRoute moduleKey="stock_entry"><Purchases /></ProtectedRoute>} />
-            <Route path="employee/purchases" element={<ProtectedRoute moduleKey="stock_entry"><Purchases /></ProtectedRoute>} />
-            <Route path="employee/customers" element={<ProtectedRoute moduleKey="customers"><Customers /></ProtectedRoute>} />
-            <Route path="employee/sales" element={<ProtectedRoute moduleKey="sales"><Invoices /></ProtectedRoute>} />
-            <Route path="employee/invoices" element={<ProtectedRoute moduleKey="invoices"><Invoices /></ProtectedRoute>} />
-            <Route path="employee/returns" element={<ProtectedRoute moduleKey="returns"><Returns /></ProtectedRoute>} />
-            <Route path="employee/warranty" element={<ProtectedRoute moduleKey="warranty"><Warranties /></ProtectedRoute>} />
-            <Route path="employee/profile" element={<ProtectedRoute moduleKey="profile"><EmployeeProfile /></ProtectedRoute>} />
-          </Route>
+              {/* Employee Routes (Restricted by Module) */}
+              <Route path="employee/dashboard" element={<ProtectedRoute moduleKey="dashboard"><EmployeeDashboard /></ProtectedRoute>} />
+              <Route path="employee/pos" element={<ProtectedRoute moduleKey="pos"><POS /></ProtectedRoute>} />
+              <Route path="employee/exchanged-phones" element={<ProtectedRoute moduleKey="exchanged_phones"><ExchangedPhones /></ProtectedRoute>} />
+              <Route path="employee/inventory" element={<ProtectedRoute moduleKey="inventory"><Inventory /></ProtectedRoute>} />
+              <Route path="employee/accessories" element={<ProtectedRoute moduleKey="accessories"><Accessories /></ProtectedRoute>} />
+              <Route path="employee/stock-entry" element={<ProtectedRoute moduleKey="stock_entry"><Purchases /></ProtectedRoute>} />
+              <Route path="employee/purchases" element={<ProtectedRoute moduleKey="stock_entry"><Purchases /></ProtectedRoute>} />
+              <Route path="employee/customers" element={<ProtectedRoute moduleKey="customers"><Customers /></ProtectedRoute>} />
+              <Route path="employee/sales" element={<ProtectedRoute moduleKey="sales"><Invoices /></ProtectedRoute>} />
+              <Route path="employee/invoices" element={<ProtectedRoute moduleKey="invoices"><Invoices /></ProtectedRoute>} />
+              <Route path="employee/returns" element={<ProtectedRoute moduleKey="returns"><Returns /></ProtectedRoute>} />
+              <Route path="employee/warranty" element={<ProtectedRoute moduleKey="warranty"><Warranties /></ProtectedRoute>} />
+              <Route path="employee/profile" element={<ProtectedRoute moduleKey="profile"><EmployeeProfile /></ProtectedRoute>} />
+            </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </StoreProvider>
     </AuthProvider>
   );
 }

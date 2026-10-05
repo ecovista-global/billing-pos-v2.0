@@ -20,7 +20,8 @@ import {
   ShieldCheck,
   Check,
   ChevronRight,
-  ExternalLink
+  ExternalLink,
+  Trash2
 } from 'lucide-react';
 import { apiFetch } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -172,6 +173,33 @@ export default function ExchangedPhones() {
     }
   };
 
+  // Delete exchanged phone record (Super Admin)
+  const handleDeleteExchange = async (item) => {
+    const confirmDelete = window.confirm(
+      `Are you sure you want to permanently delete this trade-in record?\n\n` +
+      `Exchange #: ${item.exchange_number}\n` +
+      `Device: ${item.brand} ${item.model} (IMEI: ${item.imei1})\n` +
+      `Customer: ${item.customer_name}\n` +
+      `Valuation: ${formatCurrency(item.exchange_value)}\n\n` +
+      `This action cannot be undone.`
+    );
+    if (!confirmDelete) return;
+
+    try {
+      const res = await apiFetch(`/exchanges/${item.id}`, {
+        method: 'DELETE'
+      });
+      if (res.success) {
+        alert(res.message || 'Exchanged phone record deleted permanently.');
+        fetchExchanges();
+      } else {
+        alert(res.message || 'Failed to delete record.');
+      }
+    } catch (err) {
+      alert(err.message || 'Error deleting trade-in record.');
+    }
+  };
+
   const getStatusBadge = (status) => {
     switch (status) {
       case 'IN_STOCK':
@@ -192,7 +220,7 @@ export default function ExchangedPhones() {
   return (
     <div className="space-y-6">
       
-      {/* Top Banner */}
+      {}
       <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
           <div className="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold">
@@ -213,7 +241,7 @@ export default function ExchangedPhones() {
           </div>
         </div>
 
-        {/* Action Button */}
+        {}
         <div className="flex items-center gap-2">
           <button
             onClick={fetchExchanges}
@@ -225,7 +253,7 @@ export default function ExchangedPhones() {
         </div>
       </div>
 
-      {/* KPI Metrics Cards */}
+      {}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
@@ -284,11 +312,11 @@ export default function ExchangedPhones() {
         </div>
       </div>
 
-      {/* Filter Toolbar */}
+      {}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 text-xs">
           
-          {/* Search Box */}
+          {}
           <div className="relative lg:col-span-2">
             <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
             <input
@@ -300,7 +328,7 @@ export default function ExchangedPhones() {
             />
           </div>
 
-          {/* Store Branch Filter */}
+          {}
           {isAdmin && (
             <div>
               <select
@@ -316,7 +344,7 @@ export default function ExchangedPhones() {
             </div>
           )}
 
-          {/* Status Filter */}
+          {}
           <div>
             <select
               value={selectedStatus}
@@ -331,7 +359,7 @@ export default function ExchangedPhones() {
             </select>
           </div>
 
-          {/* Condition Grade Filter */}
+          {}
           <div>
             <select
               value={selectedGrade}
@@ -348,7 +376,7 @@ export default function ExchangedPhones() {
 
         </div>
 
-        {/* Clear Filters helper */}
+        {}
         {(search || selectedStatus || selectedGrade || (isAdmin && selectedStore)) && (
           <div className="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100">
             <span>Filtered results</span>
@@ -367,7 +395,7 @@ export default function ExchangedPhones() {
         )}
       </div>
 
-      {/* Exchanged Phones Table */}
+      {}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
@@ -405,7 +433,7 @@ export default function ExchangedPhones() {
                 exchanges.map(item => (
                   <tr key={item.id} className="hover:bg-slate-50/60 transition group">
                     
-                    {/* Device Column */}
+                    {}
                     <td className="py-3.5 px-4 font-medium">
                       <div className="flex items-center gap-2.5">
                         <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center shrink-0">
@@ -427,7 +455,7 @@ export default function ExchangedPhones() {
                       </div>
                     </td>
 
-                    {/* IMEI & Specs */}
+                    {}
                     <td className="py-3.5 px-4 font-mono text-[11px]">
                       <div className="text-slate-900 font-bold tracking-tight">
                         {item.imei1}
@@ -444,7 +472,7 @@ export default function ExchangedPhones() {
                       </div>
                     </td>
 
-                    {/* Customer KYC */}
+                    {}
                     <td className="py-3.5 px-4">
                       <div className="font-bold text-slate-900">{item.customer_name}</div>
                       <div className="text-[11px] text-slate-500">{item.customer_phone}</div>
@@ -455,12 +483,12 @@ export default function ExchangedPhones() {
                       )}
                     </td>
 
-                    {/* Exchange Value */}
+                    {}
                     <td className="py-3.5 px-4 font-bold text-emerald-800 text-sm">
                       {formatCurrency(item.exchange_value)}
                     </td>
 
-                    {/* Linked Sale Bill */}
+                    {}
                     <td className="py-3.5 px-4 text-[11px]">
                       {item.sale_invoice_number ? (
                         <button
@@ -480,7 +508,7 @@ export default function ExchangedPhones() {
                       </div>
                     </td>
 
-                    {/* Store Outlet */}
+                    {}
                     <td className="py-3.5 px-4 text-[11px]">
                       <div className="font-semibold text-slate-800">{item.store_name}</div>
                       <div className="text-[10px] text-slate-400 flex items-center gap-1">
@@ -489,16 +517,16 @@ export default function ExchangedPhones() {
                       </div>
                     </td>
 
-                    {/* Status Badge */}
+                    {}
                     <td className="py-3.5 px-4 text-center">
                       {getStatusBadge(item.status)}
                     </td>
 
-                    {/* Action Buttons */}
+                    {}
                     <td className="py-3.5 px-4 text-center">
                       <div className="flex items-center justify-center gap-1">
                         
-                        {/* View Details */}
+                        {}
                         <button
                           onClick={() => {
                             setSelectedExchange(item);
@@ -510,7 +538,7 @@ export default function ExchangedPhones() {
                           <Eye className="w-4 h-4" />
                         </button>
 
-                        {/* Print Trade-In Voucher */}
+                        {}
                         <button
                           onClick={() => {
                             setSelectedExchange(item);
@@ -522,7 +550,7 @@ export default function ExchangedPhones() {
                           <Printer className="w-4 h-4" />
                         </button>
 
-                        {/* Move to Inventory (if not already converted) */}
+                        {}
                         {item.status !== 'ADDED_TO_INVENTORY' ? (
                           <button
                             onClick={() => {
@@ -546,6 +574,15 @@ export default function ExchangedPhones() {
                           </span>
                         )}
 
+                        {isAdmin && (
+                          <button
+                            onClick={() => handleDeleteExchange(item)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                            title="Delete Trade-In Record Permanently"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
 
@@ -557,7 +594,7 @@ export default function ExchangedPhones() {
         </div>
       </div>
 
-      {/* ================= MODAL: VIEW DETAILS ================= */}
+      {}
       {showDetailModal && selectedExchange && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-lg w-full p-6 text-xs space-y-4">
@@ -573,7 +610,7 @@ export default function ExchangedPhones() {
               </button>
             </div>
 
-            {/* Overview */}
+            {}
             <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
               <div>
                 <span className="text-[10px] text-slate-400 block font-semibold">Exchange Reference</span>
@@ -609,7 +646,7 @@ export default function ExchangedPhones() {
               </div>
             </div>
 
-            {/* Customer Information */}
+            {}
             <div className="p-3 bg-amber-50/50 rounded-xl border border-amber-200/60 space-y-1">
               <span className="text-[10px] font-bold uppercase tracking-wider text-amber-900 block mb-1">
                 Customer KYC & Handover Details
@@ -634,7 +671,7 @@ export default function ExchangedPhones() {
               </div>
             </div>
 
-            {/* Status Selector */}
+            {}
             <div>
               <label className="font-bold text-slate-600 block mb-1">Update Stock / Refurbishment Status</label>
               <div className="flex gap-2">
@@ -668,7 +705,7 @@ export default function ExchangedPhones() {
         </div>
       )}
 
-      {/* ================= MODAL: MOVE TO INVENTORY ================= */}
+      {}
       {showMoveModal && selectedExchange && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-md w-full p-6 text-xs space-y-4">
@@ -741,7 +778,7 @@ export default function ExchangedPhones() {
         </div>
       )}
 
-      {/* ================= MODAL: PRINTABLE EXCHANGE VOUCHER ================= */}
+      {}
       {showVoucherModal && selectedExchange && (
         <ExchangeVoucherModal
           exchange={selectedExchange}
@@ -749,7 +786,7 @@ export default function ExchangedPhones() {
         />
       )}
 
-      {/* Full Invoice Modal Viewer */}
+      {}
       {invoiceModalData && (
         <InvoiceModal
           invoiceData={invoiceModalData}

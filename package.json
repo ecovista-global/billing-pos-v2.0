@@ -7,20 +7,11 @@
     "node": "20"
   },
   "scripts": {
-    "build": "npm --prefix client ci --include=dev && npm --prefix client run build && npm rebuild better-sqlite3",
-    "ensure-build": "test -f client/dist/index.html || npm run build",
-    "start": "npm run ensure-build && npm rebuild better-sqlite3 && node server/src/index.js",
-    "seed": "node server/src/db/seed.js",
-    "rebuild": "npm rebuild better-sqlite3"
+    "postinstall": "npm --prefix server install && npm --prefix client install",
+    "build": "npm --prefix client run build",
+    "db:push": "npm --prefix server run db:push",
+    "start": "node server/src/index.js",
+    "seed": "npm --prefix server run seed"
   },
-  "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "better-sqlite3": "^11.7.0",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
-    "express": "^4.21.1",
-    "jsonwebtoken": "^9.0.2",
-    "multer": "^1.4.5-lts.1",
-    "uuid": "^11.0.3"
-  }
+  "dependencies": {}
 }

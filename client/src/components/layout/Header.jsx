@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useStoreContext } from '../../context/StoreContext';
 import { useNavigate } from 'react-router-dom';
 import { 
   Building2, 
@@ -19,7 +20,7 @@ export default function Header({ toggleSidebar, isSidebarOpen }) {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [showNotif, setShowNotif] = useState(false);
-  const [storesCount, setStoresCount] = useState(null);
+  const { stores, selectedStoreId, setSelectedStoreId, isAllStores } = useStoreContext();
 
   useEffect(() => {
     async function loadNotifications() {
@@ -33,24 +34,14 @@ export default function Header({ toggleSidebar, isSidebarOpen }) {
       }
     }
     loadNotifications();
-
-    if (isAdmin) {
-      apiFetch('/stores')
-        .then(res => {
-          if (res.success && Array.isArray(res.stores)) {
-            setStoresCount(res.stores.length);
-          }
-        })
-        .catch(() => {});
-    }
-  }, [isAdmin]);
+  }, []);
 
   const posPath = isAdmin ? '/admin/pos' : '/employee/pos';
 
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
       <div className="px-4 sm:px-6 py-3 flex items-center justify-between">
-        {/* Left: Mobile Toggle & Store Identification */}
+        {}
         <div className="flex items-center gap-3">
           <button 
             onClick={toggleSidebar}
@@ -68,9 +59,16 @@ export default function Header({ toggleSidebar, isSidebarOpen }) {
             <div className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
               <Building2 className="w-3.5 h-3.5 text-emerald-600" />
               {isAdmin ? (
-                <span className="text-emerald-700 font-bold">
-                  Central Management — {storesCount !== null ? `${storesCount} Store${storesCount === 1 ? '' : 's'}` : 'All Stores'}
-                </span>
+                <select 
+                  className="bg-transparent text-emerald-700 font-bold border-none outline-none text-xs cursor-pointer focus:ring-0 pl-0 pr-6"
+                  value={selectedStoreId || ''}
+                  onChange={(e) => setSelectedStoreId(e.target.value ? parseInt(e.target.value) : null)}
+                >
+                  <option value="">All Stores ({stores.length})</option>
+                  {stores.map(s => (
+                    <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
+                  ))}
+                </select>
               ) : (
                 <span>Store: <strong className="text-slate-900">{user?.store_name || user?.store_code || 'Assigned Store'}</strong></span>
               )}
@@ -78,7 +76,7 @@ export default function Header({ toggleSidebar, isSidebarOpen }) {
           </div>
         </div>
 
-        {/* Right: Quick POS, Notifications, User Menu */}
+        {}
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate(posPath)}
@@ -88,7 +86,7 @@ export default function Header({ toggleSidebar, isSidebarOpen }) {
             <span>Open POS</span>
           </button>
 
-          {/* Notifications Dropdown */}
+          {}
           <div className="relative">
             <button
               onClick={() => setShowNotif(!showNotif)}
@@ -124,7 +122,7 @@ export default function Header({ toggleSidebar, isSidebarOpen }) {
 
           <div className="h-5 w-px bg-slate-200"></div>
 
-          {/* User Profile */}
+          {}
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs border border-emerald-200 shadow-sm">
               {user?.full_name ? user.full_name[0] : 'U'}

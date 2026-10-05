@@ -52,7 +52,7 @@ export default function IMEILifecycleModal({ imei, onClose }) {
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-150">
         
-        {/* Header */}
+        {}
         <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400">
@@ -83,7 +83,7 @@ export default function IMEILifecycleModal({ imei, onClose }) {
           </button>
         </div>
 
-        {/* Content */}
+        {}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {loading && (
             <div className="py-12 text-center text-slate-500 text-sm">
@@ -101,7 +101,7 @@ export default function IMEILifecycleModal({ imei, onClose }) {
 
           {phone && (
             <>
-              {/* Device Overview Card */}
+              {}
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                 <div>
                   <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px] block">Model</span>
@@ -125,7 +125,7 @@ export default function IMEILifecycleModal({ imei, onClose }) {
                 </div>
               </div>
 
-              {/* Financial Cost Breakdown (Rule 8 verification) */}
+              {}
               <div className="border border-slate-200 rounded-xl p-4 bg-white shadow-xs">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
                   <IndianRupee className="w-4 h-4 text-emerald-600" />
@@ -156,14 +156,14 @@ export default function IMEILifecycleModal({ imei, onClose }) {
                 )}
               </div>
 
-              {/* Timeline Lifecycle */}
+              {}
               <div className="space-y-3">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
                   Lifecycle Event History
                 </h4>
 
                 <div className="relative border-l-2 border-emerald-500 ml-3 space-y-4 pl-4 py-1 text-xs">
-                  {/* Stock Entry */}
+                  {}
                   <div className="relative">
                     <div className="absolute -left-[21px] top-1 w-3 h-3 bg-emerald-600 rounded-full ring-4 ring-emerald-100"></div>
                     <div className="font-bold text-slate-900">Added to Inventory</div>
@@ -172,7 +172,7 @@ export default function IMEILifecycleModal({ imei, onClose }) {
                     </div>
                   </div>
 
-                  {/* Transfers */}
+                  {}
                   {data?.transfers && data.transfers.map(trf => (
                     <div key={trf.id} className="relative">
                       <div className="absolute -left-[21px] top-1 w-3 h-3 bg-amber-500 rounded-full ring-4 ring-amber-100"></div>
@@ -186,7 +186,7 @@ export default function IMEILifecycleModal({ imei, onClose }) {
                     </div>
                   ))}
 
-                  {/* Sale Record */}
+                  {}
                   {data?.saleInfo ? (
                     <div className="relative">
                       <div className="absolute -left-[21px] top-1 w-3 h-3 bg-blue-600 rounded-full ring-4 ring-blue-100"></div>
@@ -205,7 +205,7 @@ export default function IMEILifecycleModal({ imei, onClose }) {
                     </div>
                   )}
 
-                  {/* Certified Warranty */}
+                  {}
                   {data?.warrantyInfo && (
                     <div className="relative">
                       <div className="absolute -left-[21px] top-1 w-3 h-3 bg-purple-600 rounded-full ring-4 ring-purple-100"></div>
@@ -218,7 +218,7 @@ export default function IMEILifecycleModal({ imei, onClose }) {
                     </div>
                   )}
 
-                  {/* Returns (if any) */}
+                  {}
                   {data?.returnInfo && data.returnInfo.length > 0 && data.returnInfo.map(ret => (
                     <div key={ret.id} className="relative">
                       <div className="absolute -left-[21px] top-1 w-3 h-3 bg-rose-600 rounded-full ring-4 ring-rose-100"></div>
@@ -236,7 +236,7 @@ export default function IMEILifecycleModal({ imei, onClose }) {
           )}
         </div>
 
-        {/* Footer */}
+        {}
         <div className="px-6 py-3 bg-slate-100 border-t border-slate-200 flex justify-end">
           <button
             onClick={onClose}

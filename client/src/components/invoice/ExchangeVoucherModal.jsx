@@ -14,7 +14,7 @@ export default function ExchangeVoucherModal({ exchange, onClose }) {
 
   const modalContent = (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 voucher-modal-backdrop invoice-modal-backdrop print:p-0 print:m-0 print:static print:bg-white print:overflow-visible">
-      {/* Dynamic @page rule for single-page A4 print */}
+      {}
       <style type="text/css" media="print">
         {`
           @page { 
@@ -26,7 +26,7 @@ export default function ExchangeVoucherModal({ exchange, onClose }) {
 
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-2xl w-full p-6 text-xs space-y-4 voucher-modal-dialog invoice-modal-dialog print:p-0 print:m-0 print:shadow-none print:border-none print:max-w-none print:max-h-none print:overflow-visible print:rounded-none">
         
-        {/* Modal Top Bar (Hidden on print) */}
+        {}
         <div className="flex items-center justify-between border-b pb-3 no-print">
           <div className="flex items-center gap-2">
             <Printer className="w-5 h-5 text-amber-600" />
@@ -50,13 +50,13 @@ export default function ExchangeVoucherModal({ exchange, onClose }) {
           </div>
         </div>
 
-        {/* Printable Voucher Sheet */}
+        {}
         <div 
           id="printable-voucher" 
           className="border border-slate-300 rounded-xl p-6 bg-white space-y-4 text-slate-800 a4-voucher-container print-avoid-break print:border-none print:p-0 print:space-y-4"
         >
           
-          {/* Top Header */}
+          {}
           <div className="flex justify-between items-start border-b border-slate-200 pb-4">
             <div>
               <div className="flex items-center gap-2">
@@ -77,15 +77,15 @@ export default function ExchangeVoucherModal({ exchange, onClose }) {
             </div>
           </div>
 
-          {/* Title Banner */}
+          {}
           <div className="text-center py-1.5 bg-slate-100 rounded-lg text-slate-800 font-extrabold uppercase tracking-wide text-[11px] border border-slate-200/60">
             DEVICE EXCHANGE & OWNERSHIP TRANSFER DECLARATION
           </div>
 
-          {/* Customer and Exchanged Device Grid */}
+          {}
           <div className="grid grid-cols-2 gap-4 text-xs">
             
-            {/* Customer Details */}
+            {}
             <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Customer Information</span>
               <p className="font-bold text-slate-900 text-sm">{exchange.customer_name}</p>
@@ -97,7 +97,7 @@ export default function ExchangeVoucherModal({ exchange, onClose }) {
               )}
             </div>
 
-            {/* Exchanged Phone Details */}
+            {}
             <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Exchanged Device Details</span>
               <p className="font-bold text-slate-900 text-sm">{exchange.brand} {exchange.model}</p>
@@ -114,7 +114,7 @@ export default function ExchangeVoucherModal({ exchange, onClose }) {
 
           </div>
 
-          {/* Valuation Box */}
+          {}
           <div className="p-3.5 bg-emerald-50 rounded-xl border border-emerald-200 flex justify-between items-center print:bg-emerald-50/80">
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-900 block">
@@ -129,7 +129,7 @@ export default function ExchangeVoucherModal({ exchange, onClose }) {
             </div>
           </div>
 
-          {/* Legal Declaration */}
+          {}
           <div className="text-[9.5px] text-slate-600 leading-relaxed border-t border-slate-200 pt-3 space-y-1">
             <p className="font-bold text-slate-800">Customer Declaration & Ownership Transfer:</p>
             <p className="text-justify">
@@ -137,7 +137,7 @@ export default function ExchangeVoucherModal({ exchange, onClose }) {
             </p>
           </div>
 
-          {/* Signature Blocks */}
+          {}
           <div className="grid grid-cols-2 gap-8 pt-10 border-t border-dashed border-slate-300 print:pt-8">
             <div className="text-center">
               <div className="border-t border-slate-400 w-3/4 mx-auto mb-1"></div>

@@ -2,127 +2,228 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const db = require('../db/database');
+const prisma = require('../db/prisma');
 const { authenticateToken, JWT_SECRET, logAudit } = require('../middleware/auth');
+const { parseUserPermissions } = require('../utils/permissions');
 
 // POST /api/auth/login
-router.post('/login', (req, res) => {
-  const { username, password } = req.body;
+router.post('/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
 
-  if (!username || !password) {
-    return res.status(400).json({ success: false, message: 'Username and password are required.' });
-  }
-
-  const user = db.prepare(`
-    SELECT u.*, s.name as store_name, s.code as store_code, s.city as store_city, s.state as store_state
-    FROM users u
-    LEFT JOIN stores s ON u.assigned_store_id = s.id
-    WHERE u.username = ?
-  `).get(username.trim());
-
-  if (!user) {
-    return res.status(401).json({ success: false, message: 'Invalid username or password.' });
-  }
-
-  // Check 24-hour lockout status
-  if (user.locked_until) {
-    const lockExpiry = new Date(user.locked_until);
-    const now = new Date();
-
-    if (lockExpiry > now) {
-      const remainingMs = lockExpiry.getTime() - now.getTime();
-      const remainingHours = Math.ceil(remainingMs / (1000 * 60 * 60));
-      return res.status(403).json({
-        success: false,
-        accountLocked: true,
-        lockedUntil: user.locked_until,
-        message: `This account has been disabled for 24 hours due to 3 consecutive wrong password attempts. Please try again in ${remainingHours} hour${remainingHours > 1 ? 's' : ''} or contact an Administrator.`
-      });
-    } else {
-      // 24 hours have elapsed: automatically clear lock
-      db.prepare(`UPDATE users SET failed_login_attempts = 0, locked_until = NULL WHERE id = ?`).run(user.id);
-      user.failed_login_attempts = 0;
-      user.locked_until = null;
+    if (!username || !password) {
+      return res.status(400).json({ success: false, message: 'Username and password are required.' });
     }
-  }
 
-  if (user.status !== 'active') {
-    return res.status(403).json({ success: false, message: 'Your account is disabled. Please contact Admin.' });
-  }
+    const user = await prisma.user.findUnique({
+      where: { username: username.trim() },
+      include: { assignedStore: true }
+    });
 
-  const match = bcrypt.compareSync(password, user.password_hash);
-  if (!match) {
-    const currentAttempts = (user.failed_login_attempts || 0) + 1;
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Invalid username or password.' });
+    }
 
-    if (currentAttempts >= 3) {
-      // Lock for 24 hours
-      const lockUntil = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-      db.prepare(`
-        UPDATE users 
-        SET failed_login_attempts = ?, locked_until = ?, updated_at = CURRENT_TIMESTAMP 
-        WHERE id = ?
-      `).run(currentAttempts, lockUntil, user.id);
+    // Check 24-hour lockout status
+    if (user.lockedUntil) {
+      const lockExpiry = new Date(user.lockedUntil);
+      const now = new Date();
 
-      logAudit(user.id, user.username, 'ACCOUNT_LOCKED', user.assigned_store_id, 'USER', user.id, {
-        reason: 'Account disabled for 24 hours after 3 wrong password attempts',
-        locked_until: lockUntil
-      }, req);
+      if (lockExpiry > now) {
+        const remainingMs = lockExpiry.getTime() - now.getTime();
+        const remainingHours = Math.ceil(remainingMs / (1000 * 60 * 60));
+        return res.status(403).json({
+          success: false,
+          accountLocked: true,
+          lockedUntil: user.lockedUntil,
+          message: `This account has been disabled for 24 hours due to 3 consecutive wrong password attempts. Please try again in ${remainingHours} hour${remainingHours > 1 ? 's' : ''} or contact an Administrator.`
+        });
+      } else {
+        // 24 hours have elapsed: automatically clear lock
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { failedLoginAttempts: 0, lockedUntil: null }
+        });
+        user.failedLoginAttempts = 0;
+        user.lockedUntil = null;
+      }
+    }
 
-      return res.status(403).json({
-        success: false,
-        accountLocked: true,
-        lockedUntil: lockUntil,
-        message: 'Password entered incorrectly 3 times. This account has been disabled for 24 hours. Please contact an Administrator.'
-      });
-    } else {
-      db.prepare(`
-        UPDATE users 
-        SET failed_login_attempts = ?, updated_at = CURRENT_TIMESTAMP 
-        WHERE id = ?
-      `).run(currentAttempts, user.id);
+    if (user.status !== 'active') {
+      return res.status(403).json({ success: false, message: 'Your account is disabled. Please contact Admin.' });
+    }
 
-      const remaining = 3 - currentAttempts;
-      return res.status(401).json({
-        success: false,
-        failedAttempts: currentAttempts,
-        remainingAttempts: remaining,
-        message: `Invalid username or password. You have ${remaining} attempt${remaining > 1 ? 's' : ''} remaining before your account is disabled for 24 hours.`
+    const match = bcrypt.compareSync(password, user.passwordHash);
+    if (!match) {
+      const currentAttempts = (user.failedLoginAttempts || 0) + 1;
+
+      if (currentAttempts >= 3) {
+        // Lock for 24 hours
+        const lockUntil = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { failedLoginAttempts: currentAttempts, lockedUntil: lockUntil }
+        });
+
+        await logAudit(user.id, user.username, 'ACCOUNT_LOCKED', user.assignedStoreId, 'USER', String(user.id), {
+          reason: 'Account disabled for 24 hours after 3 wrong password attempts',
+          locked_until: lockUntil.toISOString()
+        }, req);
+
+        return res.status(403).json({
+          success: false,
+          accountLocked: true,
+          lockedUntil: lockUntil,
+          message: 'Password entered incorrectly 3 times. This account has been disabled for 24 hours. Please contact an Administrator.'
+        });
+      } else {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { failedLoginAttempts: currentAttempts }
+        });
+
+        const remaining = 3 - currentAttempts;
+        return res.status(401).json({
+          success: false,
+          failedAttempts: currentAttempts,
+          remainingAttempts: remaining,
+          message: `Invalid username or password. You have ${remaining} attempt${remaining > 1 ? 's' : ''} remaining before your account is disabled for 24 hours.`
+        });
+      }
+    }
+
+    // Password matches: reset failed attempts if any
+    if (user.failedLoginAttempts > 0 || user.lockedUntil) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { failedLoginAttempts: 0, lockedUntil: null }
       });
     }
-  }
 
-  // Password matches: reset failed attempts if any
-  if (user.failed_login_attempts > 0 || user.locked_until) {
-    db.prepare(`UPDATE users SET failed_login_attempts = 0, locked_until = NULL WHERE id = ?`).run(user.id);
-  }
+    // If user is super_admin, trigger 2FA step
+    if (user.role === 'super_admin') {
+      const tempToken = jwt.sign(
+        { id: user.id, isTemp2FA: true },
+        JWT_SECRET,
+        { expiresIn: '5m' }
+      );
 
-  const token = jwt.sign(
-    { id: user.id, username: user.username, role: user.role, storeId: user.assigned_store_id },
-    JWT_SECRET,
-    { expiresIn: '24h' }
-  );
+      await logAudit(user.id, user.username, '2FA_CHALLENGE_ISSUED', user.assignedStoreId, 'USER', String(user.id), '2FA challenge issued to Super Admin', req);
 
-  logAudit(user.id, user.username, 'LOGIN', user.assigned_store_id, 'USER', user.id, 'User logged in successfully', req);
-
-  res.json({
-    success: true,
-    token,
-    user: {
-      id: user.id,
-      employee_id: user.employee_id,
-      username: user.username,
-      full_name: user.full_name,
-      role: user.role,
-      assigned_store_id: user.assigned_store_id,
-      store_name: user.store_name,
-      store_code: user.store_code,
-      store_city: user.store_city,
-      store_state: user.store_state,
-      email: user.email,
-      phone: user.phone,
-      permissions: db.parseUserPermissions(user.permissions, user.role)
+      return res.json({
+        success: true,
+        require2fa: true,
+        tempToken,
+        message: 'Super Admin 2FA Verification Required. Enter your 6-digit Security PIN.'
+      });
     }
-  });
+
+    const token = jwt.sign(
+      { id: user.id, username: user.username, role: user.role, is2faVerified: false, storeId: user.assignedStoreId },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    await logAudit(user.id, user.username, 'LOGIN', user.assignedStoreId, 'USER', String(user.id), 'User logged in successfully', req);
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        employee_id: user.employeeId,
+        username: user.username,
+        full_name: user.fullName,
+        role: user.role,
+        is_super_admin: user.role === 'super_admin',
+        is2faVerified: false,
+        assigned_store_id: user.assignedStoreId,
+        store_name: user.assignedStore?.name,
+        store_code: user.assignedStore?.code,
+        store_city: user.assignedStore?.city,
+        store_state: user.assignedStore?.state,
+        email: user.email,
+        phone: user.phone,
+        permissions: parseUserPermissions(user.permissions, user.role)
+      }
+    });
+  } catch (error) {
+    console.error('Login Error:', error);
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
+});
+
+// POST /api/auth/verify-2fa (Super Admin 2FA verification)
+router.post('/verify-2fa', async (req, res) => {
+  try {
+    const { tempToken, code } = req.body;
+    if (!tempToken || !code) {
+      return res.status(400).json({ success: false, message: 'Temporary token and 6-digit 2FA code are required.' });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(tempToken, JWT_SECRET);
+    } catch (e) {
+      return res.status(401).json({ success: false, message: '2FA session expired. Please log in again.' });
+    }
+
+    if (!decoded.isTemp2FA || !decoded.id) {
+      return res.status(400).json({ success: false, message: 'Invalid 2FA challenge token.' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      include: { assignedStore: true }
+    });
+
+    if (!user || user.status !== 'active' || user.role !== 'super_admin') {
+      return res.status(403).json({ success: false, message: 'Access denied.' });
+    }
+
+    // Verify PIN from settings
+    const pinSetting = await prisma.setting.findUnique({ where: { key: 'super_admin_2fa_pin' } });
+    const masterPin = (pinSetting && pinSetting.value) ? pinSetting.value.trim() : '982341';
+
+    const cleanCode = String(code).trim();
+    if (cleanCode !== masterPin) {
+      await logAudit(user.id, user.username, '2FA_VERIFICATION_FAILED', user.assignedStoreId, 'USER', String(user.id), 'Invalid 2FA security PIN attempt', req);
+      return res.status(401).json({ success: false, message: 'Invalid 2FA Security PIN. Access denied.' });
+    }
+
+    const fullToken = jwt.sign(
+      { id: user.id, username: user.username, role: user.role, is2faVerified: true, storeId: user.assignedStoreId },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    await logAudit(user.id, user.username, '2FA_VERIFIED_LOGIN', user.assignedStoreId, 'USER', String(user.id), 'Super Admin successfully authenticated with 2FA', req);
+
+    res.json({
+      success: true,
+      token: fullToken,
+      user: {
+        id: user.id,
+        employee_id: user.employeeId,
+        username: user.username,
+        full_name: user.fullName,
+        role: user.role,
+        is_super_admin: true,
+        is2faVerified: true,
+        assigned_store_id: user.assignedStoreId,
+        store_name: user.assignedStore?.name,
+        store_code: user.assignedStore?.code,
+        store_city: user.assignedStore?.city,
+        store_state: user.assignedStore?.state,
+        email: user.email,
+        phone: user.phone,
+        permissions: parseUserPermissions(user.permissions, user.role)
+      }
+    });
+  } catch (error) {
+    console.error('2FA Verification Error:', error);
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
 });
 
 // GET /api/auth/me
@@ -139,29 +240,42 @@ function isValidPassword(password) {
 }
 
 // POST /api/auth/change-password
-router.post('/change-password', authenticateToken, (req, res) => {
-  const { current_password, new_password } = req.body;
-  if (!current_password || !new_password) {
-    return res.status(400).json({ success: false, message: 'Current and new password required.' });
-  }
+router.post('/change-password', authenticateToken, async (req, res) => {
+  try {
+    const { current_password, new_password } = req.body;
+    if (!current_password || !new_password) {
+      return res.status(400).json({ success: false, message: 'Current and new password required.' });
+    }
 
-  if (!isValidPassword(new_password)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Password must be at least 8 characters long and contain at least 1 uppercase letter, 1 number, and 1 special character.'
+    if (!isValidPassword(new_password)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 8 characters long and contain at least 1 uppercase letter, 1 number, and 1 special character.'
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { passwordHash: true }
     });
+    
+    if (!user || !bcrypt.compareSync(current_password, user.passwordHash)) {
+      return res.status(400).json({ success: false, message: 'Incorrect current password.' });
+    }
+
+    const newHash = bcrypt.hashSync(new_password, 10);
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { passwordHash: newHash }
+    });
+    
+    await logAudit(req.user.id, req.user.username, 'CHANGE_PASSWORD', req.user.storeId, 'USER', String(req.user.id), 'Password changed', req);
+
+    res.json({ success: true, message: 'Password changed successfully.' });
+  } catch (error) {
+    console.error('Change Password Error:', error);
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
-
-  const user = db.prepare(`SELECT password_hash FROM users WHERE id = ?`).get(req.user.id);
-  if (!bcrypt.compareSync(current_password, user.password_hash)) {
-    return res.status(400).json({ success: false, message: 'Incorrect current password.' });
-  }
-
-  const newHash = bcrypt.hashSync(new_password, 10);
-  db.prepare(`UPDATE users SET password_hash = ?, plain_password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`).run(newHash, new_password.trim(), req.user.id);
-  logAudit(req.user.id, req.user.username, 'CHANGE_PASSWORD', req.user.assigned_store_id, 'USER', req.user.id, 'Password changed', req);
-
-  res.json({ success: true, message: 'Password changed successfully.' });
 });
 
 module.exports = router;

@@ -34,13 +34,13 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col justify-center items-center p-4 relative overflow-hidden">
       
-      {/* Subtle Background Glows */}
+      {}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none"></div>
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
       <div className="max-w-md w-full relative z-10">
         
-        {/* Brand Header */}
+        {}
         <div className="text-center mb-8">
           <div className="w-20 h-20 bg-white rounded-3xl p-2 mx-auto shadow-2xl flex items-center justify-center border-2 border-emerald-500/20 mb-3">
             <img 
@@ -55,7 +55,7 @@ export default function Login() {
           <p className="text-xs text-slate-400 mt-1">Multi-Store POS & Business Management System</p>
         </div>
 
-        {/* Login Card */}
+        {}
         <div className="bg-white/95 backdrop-blur-md rounded-2xl p-6 sm:p-8 shadow-2xl border border-white/20">
           <div className="mb-6">
             <h2 className="text-lg font-bold text-slate-900">Sign in to your account</h2>
@@ -144,7 +144,7 @@ export default function Login() {
 
         </div>
 
-        {/* Footer info */}
+        {}
         <p className="text-center text-xs text-slate-500 mt-6">
           Ecofone Retail Operations • Centralized Multi-Store POS System
         </p>

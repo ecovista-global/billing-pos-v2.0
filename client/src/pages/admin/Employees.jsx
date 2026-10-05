@@ -141,7 +141,7 @@ export default function Employees() {
     const confirmAction = window.confirm(
       `Are you sure you want to ${actionVerb} this employee account?\n\n` +
       `Employee: ${emp.full_name} (${emp.username})\n` +
-      `Role: ${emp.role === 'admin' ? 'Super Admin' : 'Store Staff'}\n` +
+      `Role: ${emp.role === 'super_admin' ? 'CEO' : (emp.role === 'admin' ? 'Super Admin' : 'Store Staff')}\n` +
       `Branch: ${emp.store_name || 'Headquarters'}\n\n` +
       (isCurrentlyActive
         ? '⚠️ If disabled, this employee will be IMMEDIATELY blocked from logging in or making sales.'
@@ -269,7 +269,7 @@ export default function Employees() {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
         <div>
           <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
@@ -300,7 +300,7 @@ export default function Employees() {
         </button>
       </div>
 
-      {/* Filters */}
+      {}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row gap-3 text-xs">
         <div className="relative flex-1">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -335,7 +335,7 @@ export default function Employees() {
         </select>
       </div>
 
-      {/* Employees Table */}
+      {}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
@@ -399,45 +399,9 @@ export default function Employees() {
 
                   <td className="py-3 px-3">
                     <div className="flex items-center gap-1.5">
-                      <span className={`font-mono text-xs px-2 py-0.5 rounded border select-all transition ${
-                        (showAllPasswords || revealedPasswords[emp.id])
-                          ? 'bg-amber-50 text-amber-950 font-bold border-amber-300 shadow-2xs'
-                          : 'bg-slate-100/70 text-slate-400 tracking-widest border-slate-200 select-none'
-                      }`}>
-                        {(showAllPasswords || revealedPasswords[emp.id])
-                          ? (emp.plain_password || 'Not Set')
-                          : '••••••••'}
+                      <span className="font-mono text-xs px-2 py-0.5 rounded border select-none bg-slate-100/70 text-slate-400 tracking-widest border-slate-200">
+                        ••••••••
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => togglePasswordVisibility(emp.id)}
-                        className={`p-1 rounded-md transition ${
-                          (showAllPasswords || revealedPasswords[emp.id])
-                            ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
-                            : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
-                        }`}
-                        title={(showAllPasswords || revealedPasswords[emp.id]) ? "Hide password" : "View password"}
-                      >
-                        {(showAllPasswords || revealedPasswords[emp.id]) ? (
-                          <EyeOff className="w-3.5 h-3.5" />
-                        ) : (
-                          <Eye className="w-3.5 h-3.5" />
-                        )}
-                      </button>
-                      {emp.plain_password && (
-                        <button
-                          type="button"
-                          onClick={() => handleCopyPassword(emp.id, emp.plain_password)}
-                          className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
-                          title="Copy password to clipboard"
-                        >
-                          {copiedId === emp.id ? (
-                            <Check className="w-3.5 h-3.5 text-emerald-600" />
-                          ) : (
-                            <Copy className="w-3.5 h-3.5" />
-                          )}
-                        </button>
-                      )}
                     </div>
                   </td>
 
@@ -538,7 +502,7 @@ export default function Employees() {
 
                   <td className="py-3 px-4 text-center">
                     <div className="flex items-center justify-center gap-1">
-                      {/* Unlock Account Action Button if locked */}
+                      {}
                       {emp.locked_until && new Date(emp.locked_until) > new Date() && (
                         <button
                           type="button"
@@ -550,7 +514,7 @@ export default function Employees() {
                         </button>
                       )}
 
-                      {/* Enable/Disable Quick Action Toggle */}
+                      {}
                       <button
                         onClick={() => handleToggleStatus(emp)}
                         disabled={emp.role === 'admin' && emp.id === user?.id}
@@ -568,7 +532,7 @@ export default function Employees() {
                         )}
                       </button>
 
-                      {/* View Credentials / Password */}
+                      {}
                       <button
                         onClick={() => setViewPasswordModalUser(emp)}
                         className="p-1.5 text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition"
@@ -577,7 +541,7 @@ export default function Employees() {
                         <Eye className="w-4 h-4" />
                       </button>
 
-                      {/* Password Reset */}
+                      {}
                       <button
                         onClick={() => { setTargetUser(emp); setShowResetModal(true); }}
                         className="p-1.5 text-slate-400 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition"
@@ -586,8 +550,8 @@ export default function Employees() {
                         <Key className="w-4 h-4" />
                       </button>
 
-                      {/* Permissions / Access Control Button */}
-                      {emp.role !== 'admin' && (
+                      {}
+                      {(emp.role === 'employee' || (emp.role === 'admin' && user?.is_super_admin)) && (
                         <button
                           onClick={() => {
                             setPermissionsTargetEmp(emp);
@@ -608,7 +572,7 @@ export default function Employees() {
         </div>
       </div>
 
-      {/* Add Employee Modal */}
+      {}
       {showAddModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-lg w-full p-6 text-xs space-y-4">
@@ -735,33 +699,19 @@ export default function Employees() {
         </div>
       )}
 
-      {/* Reset Password Modal */}
+      {}
       {showResetModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-sm w-full p-6 text-xs space-y-4">
             <h3 className="font-bold text-sm text-slate-900">Reset Password for {targetUser?.full_name}</h3>
             
-            {/* Current Existing Password */}
+            {}
             <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Existing / Current Password:</span>
               <div className="flex items-center justify-between gap-2">
-                <span className="font-mono font-bold text-slate-800 text-xs select-all">
-                  {targetUser?.plain_password || 'Not set in database'}
+                <span className="font-mono font-bold text-slate-800 text-xs">
+                  [Encrypted in Database]
                 </span>
-                {targetUser?.plain_password && (
-                  <button
-                    type="button"
-                    onClick={() => handleCopyPassword('reset-' + targetUser.id, targetUser.plain_password)}
-                    className="p-1 text-slate-500 hover:text-slate-800 bg-white rounded border border-slate-200"
-                    title="Copy existing password"
-                  >
-                    {copiedId === ('reset-' + targetUser.id) ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
-                    ) : (
-                      <Copy className="w-3.5 h-3.5" />
-                    )}
-                  </button>
-                )}
               </div>
             </div>
 
@@ -808,7 +758,7 @@ export default function Employees() {
         </div>
       )}
 
-      {/* View Credentials Modal */}
+      {}
       {viewPasswordModalUser && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-sm w-full p-6 text-xs space-y-4">
@@ -847,28 +797,9 @@ export default function Employees() {
                   <span className="text-[9px] font-medium text-amber-700">Confidential</span>
                 </div>
                 <div className="flex items-center justify-between gap-2 bg-white px-3 py-2 rounded-lg border border-amber-200">
-                  <span className="font-mono font-bold text-slate-900 text-sm select-all">
-                    {viewPasswordModalUser.plain_password || 'Not set in database'}
+                  <span className="font-mono font-bold text-slate-900 text-sm">
+                    [Encrypted]
                   </span>
-                  {viewPasswordModalUser.plain_password && (
-                    <button
-                      type="button"
-                      onClick={() => handleCopyPassword('view-' + viewPasswordModalUser.id, viewPasswordModalUser.plain_password)}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-[10px] transition"
-                    >
-                      {copiedId === ('view-' + viewPasswordModalUser.id) ? (
-                        <>
-                          <Check className="w-3 h-3 text-emerald-600" />
-                          <span>Copied!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3 h-3" />
-                          <span>Copy</span>
-                        </>
-                      )}
-                    </button>
-                  )}
                 </div>
               </div>
 
@@ -905,7 +836,7 @@ export default function Employees() {
         </div>
       )}
 
-      {/* Permissions Modal */}
+      {}
       {showPermissionsModal && permissionsTargetEmp && (
         <PermissionsModal
           employee={permissionsTargetEmp}

@@ -29,7 +29,7 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
 
   const modalContent = (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 invoice-modal-backdrop print:p-0 print:m-0 print:static print:bg-white print:overflow-visible">
-      {/* Injected @page dynamic rule for perfect margins */}
+      {}
       {printFormat === 'a4' ? (
         <style type="text/css" media="print">
           {`
@@ -47,7 +47,7 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
 
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-150 invoice-modal-dialog print:shadow-none print:border-none print:max-w-none print:max-h-none print:overflow-visible print:rounded-none">
         
-        {/* Modal Top Bar (Hidden during print) */}
+        {}
         <div className="px-6 py-3.5 bg-slate-900 text-white flex items-center justify-between no-print">
           <div className="flex items-center gap-2">
             <Receipt className="w-4 h-4 text-emerald-400" />
@@ -99,10 +99,10 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
           </div>
         </div>
 
-        {/* Scrollable Bill Content */}
+        {}
         <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-50/50 invoice-modal-content print:p-0 print:m-0 print:bg-white print:overflow-visible">
           
-          {/* Printable Invoice Container */}
+          {}
           <div 
             id="printable-invoice" 
             className={`bg-white mx-auto print:border-none print:shadow-none print:p-0 print:m-0 ${
@@ -113,7 +113,7 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
           >
             
             {printFormat === 'thermal' ? (
-              /* ================= 80mm THERMAL RECEIPT LAYOUT ================= */
+              
               <div className="text-slate-900 font-mono text-[11px] leading-relaxed">
                 <div className="text-center pb-2 border-b border-dashed border-slate-400">
                   <div className="font-extrabold text-sm tracking-wider uppercase">{company.company_name || 'ECOFONE'}</div>
@@ -146,7 +146,7 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
                   </div>
                 </div>
 
-                {/* Items */}
+                {}
                 <div className="py-2 border-b border-dashed border-slate-400 space-y-2 text-[10px]">
                   {items.map((item, idx) => {
                     const isAccessory = item.item_type === 'accessory' || item.accessory_id;
@@ -186,7 +186,7 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
                   })}
                 </div>
 
-                {/* Financials */}
+                {}
                 <div className="py-2 border-b border-dashed border-slate-400 text-[10px] space-y-0.5">
                   <div className="flex justify-between">
                     <span>Subtotal:</span>
@@ -264,10 +264,10 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
                 </div>
               </div>
             ) : (
-              /* ================= FULL A4 TAX INVOICE LAYOUT (STRICT SINGLE PAGE) ================= */
+              
               <div className="space-y-2.5 print:space-y-1.5 text-slate-800 text-xs a4-invoice-container">
                 
-                {/* Header: Branding & Store info */}
+                {}
                 <div className="flex items-start justify-between border-b border-slate-300 pb-2.5 print:pb-1.5 print-avoid-break">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 print:w-10 print:h-10 rounded-xl bg-white border border-slate-200 p-1 flex items-center justify-center shadow-xs shrink-0">
@@ -308,7 +308,7 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
                   </div>
                 </div>
 
-                {/* Customer Details & Payment Box */}
+                {}
                 <div className="grid grid-cols-2 gap-3 p-2.5 print:p-2 border border-slate-200 rounded-xl bg-slate-50/80 text-[11px] print-avoid-break">
                   <div>
                     <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-500 block">Billed To (Customer):</span>
@@ -331,7 +331,7 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
                   </div>
                 </div>
 
-                {/* Product Details Table */}
+                {}
                 <div className="print-avoid-break overflow-x-auto">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
@@ -430,7 +430,7 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
                   </table>
                 </div>
 
-                {/* Financial Breakdown & Amount in Words */}
+                {}
                 <div className="mt-2.5 print:mt-1.5 pt-2 print:pt-1 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-3 print:gap-2 print-avoid-break">
                   <div>
                     <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
@@ -440,7 +440,7 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
                       {numberToWordsINR(sale?.exchange_amount > 0 ? (sale.net_payable !== undefined && sale.net_payable !== null ? sale.net_payable : Math.max(0, sale.grand_total - sale.exchange_amount)) : sale?.grand_total)}
                     </p>
 
-                    {/* Exchanged Device Details Box */}
+                    {}
                     {sale?.exchange_amount > 0 && exchange && (
                       <div className="mt-1.5 p-1.5 rounded-lg bg-amber-50/80 border border-amber-200 text-[9.5px] text-amber-950 leading-tight">
                         <span className="font-bold block text-amber-900 mb-0.5">Exchange Device Credited:</span>
@@ -511,7 +511,7 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
                       <span className="text-emerald-800">{formatCurrency(sale?.grand_total)}</span>
                     </div>
 
-                    {/* Exchange Deduction Breakdown */}
+                    {}
                     {sale?.exchange_amount > 0 && (
                       <>
                         <div className="flex justify-between text-emerald-800 font-bold text-[11px] pt-0.5 border-t border-dashed border-slate-300">
@@ -527,7 +527,7 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
                   </div>
                 </div>
 
-                {/* Terms & Conditions & Authorized Sign */}
+                {}
                 <div className="mt-2.5 print:mt-1 pt-1.5 border-t border-slate-200 grid grid-cols-3 gap-4 text-[9px] print:text-[8.5px] text-slate-500 print-avoid-break">
                   <div className="col-span-2">
                     <span className="font-bold text-slate-700 uppercase tracking-wider block mb-0.5">Terms & Conditions:</span>
@@ -542,7 +542,7 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
                   </div>
                 </div>
 
-                {/* Footer */}
+                {}
                 <div className="mt-1.5 text-center text-[8px] text-slate-400 border-t border-slate-100 pt-1 print-avoid-break leading-snug">
                   {company.invoice_footer || 'Computer generated tax invoice under Section 31 of CGST Act, 2017. All accessory prices are inclusive of applicable 18% GST. Refurbished phones are taxed under Rule 32(5) Margin Scheme (5% GST on selling price - purchase price). Thank you for choosing Ecofone! For warranty visit www.ecofone.in'}
                 </div>

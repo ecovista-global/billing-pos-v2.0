@@ -40,7 +40,7 @@ export default function EmployeeDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Store Welcome Banner */}
+      {}
       <div className="bg-gradient-to-r from-emerald-800 to-teal-800 rounded-3xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
         <div>
           <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-xs rounded-full text-[11px] font-bold tracking-wide uppercase mb-2">
@@ -63,7 +63,7 @@ export default function EmployeeDashboard() {
         </button>
       </div>
 
-      {/* Store Stat Cards */}
+      {}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
           title="Today's Store Sales"
@@ -95,7 +95,7 @@ export default function EmployeeDashboard() {
         />
       </div>
 
-      {/* Recent Store Transactions */}
+      {}
       <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
         <div className="flex items-center justify-between">
           <div>

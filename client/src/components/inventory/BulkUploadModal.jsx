@@ -338,7 +338,7 @@ export default function BulkUploadModal({ isOpen, onClose, stores = [], supplier
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden text-xs">
         
-        {/* Header */}
+        {}
         <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
@@ -375,10 +375,10 @@ export default function BulkUploadModal({ isOpen, onClose, stores = [], supplier
           </div>
         </div>
 
-        {/* Modal Body */}
+        {}
         <div className="p-6 overflow-y-auto space-y-4 flex-1">
           
-          {/* Target Store & Supplier Selector */}
+          {}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
             <div>
               <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">
@@ -418,7 +418,7 @@ export default function BulkUploadModal({ isOpen, onClose, stores = [], supplier
             </div>
           </div>
 
-          {/* Drag & Drop Area */}
+          {}
           <div
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
@@ -464,7 +464,7 @@ export default function BulkUploadModal({ isOpen, onClose, stores = [], supplier
             )}
           </div>
 
-          {/* Parse Error */}
+          {}
           {parseError && (
             <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
@@ -472,7 +472,7 @@ export default function BulkUploadModal({ isOpen, onClose, stores = [], supplier
             </div>
           )}
 
-          {/* Upload Result Success Banner */}
+          {}
           {uploadResult && (
             <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-2">
               <div className="flex items-center gap-2 text-emerald-900 font-extrabold text-sm">
@@ -498,7 +498,7 @@ export default function BulkUploadModal({ isOpen, onClose, stores = [], supplier
             </div>
           )}
 
-          {/* Parsed Rows Preview */}
+          {}
           {parsedRows.length > 0 && !uploadResult && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -528,7 +528,7 @@ export default function BulkUploadModal({ isOpen, onClose, stores = [], supplier
                 </button>
               </div>
 
-              {/* Preview Table */}
+              {}
               <div className="border border-slate-200 rounded-xl overflow-hidden max-h-64 overflow-y-auto">
                 <table className="w-full text-left text-[11px] divide-y divide-slate-100">
                   <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[9px] sticky top-0">
@@ -594,7 +594,7 @@ export default function BulkUploadModal({ isOpen, onClose, stores = [], supplier
 
         </div>
 
-        {/* Modal Footer */}
+        {}
         <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-1.5 text-slate-500 text-[11px]">
             <Info className="w-3.5 h-3.5" />

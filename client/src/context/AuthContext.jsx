@@ -57,7 +57,7 @@ export function AuthProvider({ children }) {
   // Permission verification helpers
   function canAccess(moduleKey) {
     if (!user) return false;
-    if (user.role === 'admin') return true;
+    if (user.role === 'admin' || user.role === 'super_admin') return true;
     if (!moduleKey) return true;
     if (!user.permissions) return true; // default full access if not explicitly restricted
     const perm = user.permissions[moduleKey];
@@ -67,7 +67,7 @@ export function AuthProvider({ children }) {
 
   function canEdit(moduleKey) {
     if (!user) return false;
-    if (user.role === 'admin') return true;
+    if (user.role === 'admin' || user.role === 'super_admin') return true;
     if (!moduleKey) return true;
     if (!user.permissions) return true;
     const perm = user.permissions[moduleKey];
@@ -82,7 +82,7 @@ export function AuthProvider({ children }) {
       login, 
       logout, 
       loading, 
-      isAdmin: user?.role === 'admin',
+      isAdmin: user?.role === 'admin' || user?.role === 'super_admin',
       canAccess,
       canEdit
     }}>

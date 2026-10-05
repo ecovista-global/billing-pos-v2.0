@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { apiFetch } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { useStoreContext } from '../../context/StoreContext';
 import { formatCurrency, formatDate, getStatusBadge } from '../../utils/formatters';
 import IMEILifecycleModal from '../../components/ui/IMEILifecycleModal';
 import BulkUploadModal from '../../components/inventory/BulkUploadModal';
@@ -34,7 +35,7 @@ export default function Inventory() {
 
   // Filters
   const [search, setSearch] = useState('');
-  const [selectedStore, setSelectedStore] = useState(isAdmin ? '' : user?.assigned_store_id || '');
+  const { selectedStoreId } = useStoreContext();
   const [selectedBrand, setSelectedBrand] = useState('');
   const [selectedGrade, setSelectedGrade] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
@@ -96,7 +97,7 @@ export default function Inventory() {
     try {
       let query = `/inventory?page=${page}&limit=20`;
       if (search) query += `&search=${encodeURIComponent(search)}`;
-      if (selectedStore) query += `&store_id=${selectedStore}`;
+      if (selectedStoreId) query += `&store_id=${selectedStoreId}`;
       if (selectedBrand) query += `&brand=${encodeURIComponent(selectedBrand)}`;
       if (selectedGrade) query += `&condition_grade=${encodeURIComponent(selectedGrade)}`;
       if (selectedStatus) query += `&stock_status=${encodeURIComponent(selectedStatus)}`;
@@ -117,7 +118,7 @@ export default function Inventory() {
 
   useEffect(() => {
     fetchInventory();
-  }, [page, selectedStore, selectedBrand, selectedGrade, selectedStatus]);
+  }, [page, selectedStoreId, selectedBrand, selectedGrade, selectedStatus]);
 
   const handleAddSubmit = async (e) => {
     e.preventDefault();
@@ -261,7 +262,7 @@ export default function Inventory() {
   return (
     <div className="space-y-5">
       
-      {/* Top Controls Bar */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
         <div>
           <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
@@ -292,9 +293,9 @@ export default function Inventory() {
         </div>
       </div>
 
-      {/* Filter Bar */}
+      {}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 text-xs">
-        {/* Search */}
+        {}
         <div className="relative">
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
@@ -307,21 +308,9 @@ export default function Inventory() {
           />
         </div>
 
-        {/* Store Filter */}
-        {isAdmin && (
-          <select
-            value={selectedStore}
-            onChange={(e) => setSelectedStore(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-medium"
-          >
-            <option value="">All Stores</option>
-            {meta.stores.map(s => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
-        )}
 
-        {/* Brand Filter */}
+
+        {}
         <select
           value={selectedBrand}
           onChange={(e) => setSelectedBrand(e.target.value)}
@@ -333,7 +322,7 @@ export default function Inventory() {
           ))}
         </select>
 
-        {/* Grade Filter */}
+        {}
         <select
           value={selectedGrade}
           onChange={(e) => setSelectedGrade(e.target.value)}
@@ -345,7 +334,7 @@ export default function Inventory() {
           ))}
         </select>
 
-        {/* Status Filter */}
+        {}
         <select
           value={selectedStatus}
           onChange={(e) => setSelectedStatus(e.target.value)}
@@ -360,7 +349,7 @@ export default function Inventory() {
         </select>
       </div>
 
-      {/* Inventory Table */}
+      {}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         {loading ? (
           <div className="py-16 text-center text-slate-400 text-xs">
@@ -485,7 +474,7 @@ export default function Inventory() {
           </div>
         )}
 
-        {/* Pagination Bar */}
+        {}
         <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
           <span>Page {page} of {totalPages}</span>
           <div className="flex items-center gap-1.5">
@@ -507,7 +496,7 @@ export default function Inventory() {
         </div>
       </div>
 
-      {/* Add Phone Modal */}
+      {}
       {showAddModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-150">
@@ -586,7 +575,7 @@ export default function Inventory() {
                 </div>
               </div>
 
-              {/* IMEIs */}
+              {}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-emerald-50/50 p-3 rounded-xl border border-emerald-100">
                 <div>
                   <div className="flex items-center justify-between mb-1">
@@ -633,7 +622,7 @@ export default function Inventory() {
                 </div>
               </div>
 
-              {/* Financial Cost Calculation (Rule 8) */}
+              {}
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
                 <span className="font-bold text-slate-700 block uppercase text-[10px]">Cost Structure</span>
                 <div className="grid grid-cols-3 gap-2">
@@ -671,7 +660,7 @@ export default function Inventory() {
                 </div>
               </div>
 
-              {/* Selling Price & Store */}
+              {}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-slate-600 block mb-1">Selling Price (₹) *</label>
@@ -717,7 +706,7 @@ export default function Inventory() {
         </div>
       )}
 
-      {/* Edit Phone Modal */}
+      {}
       {editingPhone && editFormData && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-150">
@@ -804,7 +793,7 @@ export default function Inventory() {
                 </div>
               </div>
 
-              {/* IMEIs */}
+              {}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-blue-50/50 p-3 rounded-xl border border-blue-100">
                 <div>
                   <div className="flex items-center justify-between mb-1">
@@ -851,7 +840,7 @@ export default function Inventory() {
                 </div>
               </div>
 
-              {/* Stock Status & Store */}
+              {}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-slate-600 block mb-1">Stock Status *</label>
@@ -880,7 +869,7 @@ export default function Inventory() {
                 </div>
               </div>
 
-              {/* Financial Cost Calculation */}
+              {}
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
                 <span className="font-bold text-slate-700 block uppercase text-[10px]">Cost Structure</span>
                 <div className="grid grid-cols-3 gap-2">
@@ -917,7 +906,7 @@ export default function Inventory() {
                 </div>
               </div>
 
-              {/* Selling Price & Warranty */}
+              {}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-slate-600 block mb-1">Selling Price (₹) *</label>
@@ -940,7 +929,7 @@ export default function Inventory() {
                 </div>
               </div>
 
-              {/* Notes */}
+              {}
               <div>
                 <label className="font-bold text-slate-600 block mb-1">Technical & Cosmetic Notes</label>
                 <textarea
@@ -973,7 +962,7 @@ export default function Inventory() {
         </div>
       )}
 
-      {/* Bulk Excel Upload Modal */}
+      {}
       <BulkUploadModal
         isOpen={showBulkModal}
         onClose={() => setShowBulkModal(false)}
@@ -984,7 +973,7 @@ export default function Inventory() {
         }}
       />
 
-      {/* IMEI Traceability Modal */}
+      {}
       {activeTraceIMEI && (
         <IMEILifecycleModal
           imei={activeTraceIMEI}

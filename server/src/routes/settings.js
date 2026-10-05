@@ -1,133 +1,208 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db/database');
+const prisma = require('../db/prisma');
 const { authenticateToken, requireAdmin, logAudit } = require('../middleware/auth');
-
 const fs = require('fs');
 const path = require('path');
 
 // GET /api/settings
-router.get('/', authenticateToken, (req, res) => {
-  let rows = db.prepare(`SELECT key, value, group_name FROM settings`).all();
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    let rows = await prisma.setting.findMany();
 
-  // If settings table is unexpectedly empty (cold lambda), restore from backup
-  if (!rows || rows.length === 0) {
-    const backupPaths = [
-      '/tmp/settings_backup.json',
-      path.resolve(__dirname, '../../data/settings_backup.json'),
-      path.resolve(process.cwd(), 'server/data/settings_backup.json')
-    ];
-    for (const bp of backupPaths) {
-      if (fs.existsSync(bp)) {
-        try {
-          const raw = fs.readFileSync(bp, 'utf-8');
-          const parsed = JSON.parse(raw);
-          const upsert = db.prepare(`
-            INSERT INTO settings (key, value, group_name, updated_at)
-            VALUES (?, ?, 'general', CURRENT_TIMESTAMP)
-            ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
-          `);
-          for (const [k, v] of Object.entries(parsed)) {
-            upsert.run(k, String(v));
-          }
-          rows = db.prepare(`SELECT key, value, group_name FROM settings`).all();
-          break;
-        } catch (e) {}
+    // If settings table is unexpectedly empty (cold lambda), restore from backup
+    if (!rows || rows.length === 0) {
+      const backupPaths = [
+        '/tmp/settings_backup.json',
+        path.resolve(__dirname, '../../data/settings_backup.json'),
+        path.resolve(process.cwd(), 'server/data/settings_backup.json')
+      ];
+      for (const bp of backupPaths) {
+        if (fs.existsSync(bp)) {
+          try {
+            const raw = fs.readFileSync(bp, 'utf-8');
+            const parsed = JSON.parse(raw);
+            
+            await prisma.$transaction(
+              Object.entries(parsed).map(([k, v]) => 
+                prisma.setting.upsert({
+                  where: { key: k },
+                  update: { value: String(v) },
+                  create: { key: k, value: String(v), groupName: 'general' }
+                })
+              )
+            );
+
+            rows = await prisma.setting.findMany();
+            break;
+          } catch (e) {}
+        }
       }
     }
+
+    const settings = {};
+    if (rows && rows.length > 0) {
+      rows.forEach(r => settings[r.key] = r.value);
+    }
+
+    const taxRates = await prisma.taxRate.findMany();
+    const grades = await prisma.grade.findMany();
+
+    // Map Prisma objects back to snake_case for frontend
+    const mappedTaxRates = taxRates.map(tr => ({
+      id: tr.id,
+      name: tr.name,
+      rate: tr.rate,
+      cgst_rate: tr.cgstRate,
+      sgst_rate: tr.sgstRate,
+      igst_rate: tr.igstRate,
+      is_default: tr.isDefault,
+      status: tr.status
+    }));
+
+    res.json({ success: true, settings, taxRates: mappedTaxRates, grades });
+  } catch (error) {
+    console.error('Error fetching settings:', error);
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
-
-  const settings = {};
-  if (rows && rows.length > 0) {
-    rows.forEach(r => settings[r.key] = r.value);
-  }
-
-  const taxRates = db.prepare(`SELECT * FROM tax_rates`).all();
-  const grades = db.prepare(`SELECT * FROM grades`).all();
-
-  res.json({ success: true, settings, taxRates, grades });
 });
 
 // PUT /api/settings (Admin only)
-router.put('/', authenticateToken, requireAdmin, (req, res) => {
-  const { settings } = req.body;
+router.put('/', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { settings } = req.body;
 
-  if (!settings || typeof settings !== 'object') {
-    return res.status(400).json({ success: false, message: 'Settings object required.' });
-  }
+    if (!settings || typeof settings !== 'object') {
+      return res.status(400).json({ success: false, message: 'Settings object required.' });
+    }
 
-  const upsert = db.prepare(`
-    INSERT INTO settings (key, value, group_name, updated_at)
-    VALUES (?, ?, 'general', CURRENT_TIMESTAMP)
-    ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
-  `);
+    const txOperations = [];
 
-  const saveTx = db.transaction(() => {
     for (const [key, val] of Object.entries(settings)) {
-      upsert.run(key, String(val));
+      txOperations.push(
+        prisma.setting.upsert({
+          where: { key: key },
+          update: { value: String(val) },
+          create: { key: key, value: String(val), groupName: 'general' }
+        })
+      );
     }
 
     if (settings.default_tax_rate !== undefined && settings.default_tax_rate !== null && !isNaN(parseFloat(settings.default_tax_rate))) {
       const newRate = parseFloat(settings.default_tax_rate);
-      db.prepare(`UPDATE phone_inventory SET tax_rate = ? WHERE stock_status = 'AVAILABLE'`).run(newRate);
-      db.prepare(`UPDATE tax_rates SET rate = ?, cgst_rate = ?, sgst_rate = ?, igst_rate = ? WHERE is_default = 1`).run(
-        newRate,
-        Math.round((newRate / 2) * 10) / 10,
-        Math.round((newRate / 2) * 10) / 10,
-        newRate
+      
+      txOperations.push(
+        prisma.phoneInventory.updateMany({
+          where: { stockStatus: 'AVAILABLE' },
+          data: { taxRate: newRate }
+        })
+      );
+
+      txOperations.push(
+        prisma.taxRate.updateMany({
+          where: { isDefault: 1 },
+          data: {
+            rate: newRate,
+            cgstRate: Math.round((newRate / 2) * 10) / 10,
+            sgstRate: Math.round((newRate / 2) * 10) / 10,
+            igstRate: newRate
+          }
+        })
       );
     }
-  });
 
-  saveTx();
+    await prisma.$transaction(txOperations);
 
-  // Persist backup JSON to filesystem
-  try {
-    const backupJson = JSON.stringify(settings);
-    fs.writeFileSync('/tmp/settings_backup.json', backupJson);
-    const dataDir = path.resolve(__dirname, '../../data');
-    if (fs.existsSync(dataDir)) {
-      fs.writeFileSync(path.join(dataDir, 'settings_backup.json'), backupJson);
-    }
-  } catch (e) {}
+    // Persist backup JSON to filesystem
+    try {
+      const backupJson = JSON.stringify(settings);
+      fs.writeFileSync('/tmp/settings_backup.json', backupJson);
+      const dataDir = path.resolve(__dirname, '../../data');
+      if (fs.existsSync(dataDir)) {
+        fs.writeFileSync(path.join(dataDir, 'settings_backup.json'), backupJson);
+      }
+    } catch (e) {}
 
-  logAudit(req.user.id, req.user.username, 'UPDATE_SETTINGS', null, 'SETTINGS', null, 'Company and invoice settings updated', req);
+    await logAudit(req.user.id, req.user.username, 'UPDATE_SETTINGS', null, 'SETTINGS', null, 'Company and invoice settings updated', req);
 
-  res.json({ success: true, message: 'Settings saved successfully.' });
+    res.json({ success: true, message: 'Settings saved successfully.' });
+  } catch (error) {
+    console.error('Update Settings Error:', error);
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
 });
 
 // GET /api/settings/audit-logs
-router.get('/audit-logs', authenticateToken, requireAdmin, (req, res) => {
-  const { action, limit = 100 } = req.query;
+router.get('/audit-logs', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { action, limit = 100 } = req.query;
 
-  let query = `SELECT * FROM audit_logs`;
-  const params = [];
+    const queryOptions = {
+      orderBy: { id: 'desc' },
+      take: parseInt(limit)
+    };
 
-  if (action) {
-    query += ` WHERE action = ?`;
-    params.push(action);
+    if (action) {
+      queryOptions.where = { action };
+    }
+
+    const logs = await prisma.auditLog.findMany(queryOptions);
+
+    // Map to snake_case
+    const mappedLogs = logs.map(log => ({
+      id: log.id,
+      user_id: log.userId,
+      username: log.username,
+      action: log.action,
+      store_id: log.storeId,
+      entity_type: log.entityType,
+      entity_id: log.entityId,
+      details: log.details,
+      ip_address: log.ipAddress,
+      created_at: log.createdAt
+    }));
+
+    res.json({ success: true, logs: mappedLogs });
+  } catch (error) {
+    console.error('Error fetching audit logs:', error);
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
-
-  query += ` ORDER BY id DESC LIMIT ?`;
-  params.push(parseInt(limit));
-
-  const logs = db.prepare(query).all(...params);
-  res.json({ success: true, logs });
 });
 
 // GET /api/settings/notifications
-router.get('/notifications', authenticateToken, (req, res) => {
-  const storeId = req.user.assigned_store_id;
+router.get('/notifications', authenticateToken, async (req, res) => {
+  try {
+    const storeId = req.user.assigned_store_id;
 
-  let query = `
-    SELECT * FROM notifications
-    WHERE (store_id = ? OR store_id IS NULL)
-    ORDER BY id DESC
-    LIMIT 20
-  `;
+    const notifications = await prisma.notification.findMany({
+      where: {
+        OR: [
+          { storeId: storeId || null },
+          { storeId: null }
+        ]
+      },
+      orderBy: { id: 'desc' },
+      take: 20
+    });
 
-  const notifications = db.prepare(query).all(storeId || null);
-  res.json({ success: true, notifications });
+    // Map to snake_case
+    const mappedNotifications = notifications.map(notif => ({
+      id: notif.id,
+      user_id: notif.userId,
+      store_id: notif.storeId,
+      type: notif.type,
+      title: notif.title,
+      message: notif.message,
+      is_read: notif.isRead,
+      link: notif.link,
+      created_at: notif.createdAt
+    }));
+
+    res.json({ success: true, notifications: mappedNotifications });
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
+  }
 });
 
 module.exports = router;

@@ -240,7 +240,7 @@ export default function Purchases() {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
         <div>
           <div className="flex items-center gap-2">
@@ -278,7 +278,7 @@ export default function Purchases() {
         </div>
       </div>
 
-      {/* Error Alert */}
+      {}
       {error && (
         <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-3">
           <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
@@ -289,9 +289,9 @@ export default function Purchases() {
         </div>
       )}
 
-      {/* Batch Form */}
+      {}
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Supplier & Store Header */}
+        {}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
           <div>
             <label className="font-bold text-slate-700 block mb-1">Wholesale Supplier *</label>
@@ -347,7 +347,7 @@ export default function Purchases() {
           </div>
         </div>
 
-        {/* Devices In Batch */}
+        {}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden p-5 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
@@ -571,7 +571,7 @@ export default function Purchases() {
         </div>
       </form>
 
-      {/* Success Modal */}
+      {}
       {successModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-md w-full p-6 text-center animate-in fade-in zoom-in duration-150">
@@ -608,7 +608,7 @@ export default function Purchases() {
         </div>
       )}
 
-      {/* Bulk Excel Upload Modal */}
+      {}
       <BulkUploadModal
         isOpen={showBulkModal}
         onClose={() => setShowBulkModal(false)}

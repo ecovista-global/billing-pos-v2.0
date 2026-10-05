@@ -42,7 +42,7 @@ export default function ProfitLoss() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
         <div>
           <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
@@ -54,7 +54,7 @@ export default function ProfitLoss() {
           </p>
         </div>
 
-        {/* Filter Controls */}
+        {}
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <select
             value={selectedStore}
@@ -83,7 +83,7 @@ export default function ProfitLoss() {
         </div>
       </div>
 
-      {/* P&L Executive Summary Cards */}
+      {}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
           title="Net Sales Revenue"
@@ -115,7 +115,7 @@ export default function ProfitLoss() {
         />
       </div>
 
-      {/* Store-wise P&L Matrix */}
+      {}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="p-5 border-b border-slate-200">
           <h3 className="font-extrabold text-sm sm:text-base text-slate-900 tracking-tight flex items-center gap-2">
@@ -180,7 +180,7 @@ export default function ProfitLoss() {
         </div>
       </div>
 
-      {/* Expenses Breakdown by Category */}
+      {}
       <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
         <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
           <Wallet className="w-4 h-4 text-emerald-600" />

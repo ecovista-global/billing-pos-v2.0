@@ -16,12 +16,14 @@ import {
   ArrowLeftRight,
   RefreshCw,
   Check,
-  Package
+  Package,
+  Zap
 } from 'lucide-react';
 import { apiFetch } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import InvoiceModal from '../../components/invoice/InvoiceModal';
+import QuickBillModal from '../../components/pos/QuickBillModal';
 
 export default function POS() {
   const { user, isAdmin, canEdit } = useAuth();
@@ -86,6 +88,7 @@ export default function POS() {
   const [saleNotes, setSaleNotes] = useState('');
 
   // Processing & Completed Invoice State
+  const [showQuickBillModal, setShowQuickBillModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [completedInvoice, setCompletedInvoice] = useState(null);
@@ -564,7 +567,7 @@ export default function POS() {
   return (
     <div className="space-y-4">
       
-      {/* Top POS Action Bar */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
@@ -580,7 +583,7 @@ export default function POS() {
           </div>
         </div>
 
-        {/* Store Selector (Admin can switch between active stores, employee locked to assigned store) */}
+        {}
         <div className="flex items-center gap-2">
           <Building2 className="w-4 h-4 text-slate-400" />
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Store:</span>
@@ -611,13 +614,13 @@ export default function POS() {
         </div>
       )}
 
-      {/* Main POS Split Screen: Left (Device Search) vs Right (Cart & Checkout) */}
+      {}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         
-        {/* Left Column (7 cols): IMEI Search & Store Devices */}
+        {}
         <div className="lg:col-span-7 space-y-4">
           
-          {/* IMEI & Phone Search Bar */}
+          {}
           <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
             <div className="flex gap-2">
               <div className="relative flex-1">
@@ -638,10 +641,17 @@ export default function POS() {
               >
                 {searching ? 'Searching...' : 'Search'}
               </button>
+              <button
+                onClick={() => setShowQuickBillModal(true)}
+                className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 whitespace-nowrap"
+              >
+                <Zap className="w-4 h-4" />
+                Quick Bill
+              </button>
             </div>
           </div>
 
-          {/* Catalog Tab Switcher */}
+          {}
           <div className="flex items-center gap-1.5 p-1 bg-white rounded-xl border border-slate-200 shadow-xs">
             <button
               onClick={() => setCatalogTab('all')}
@@ -686,7 +696,7 @@ export default function POS() {
             </button>
           </div>
 
-          {/* Available Devices & Accessories Grid */}
+          {}
           <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -695,9 +705,9 @@ export default function POS() {
               <span className="text-[11px] text-slate-400">Click card to add to bill</span>
             </div>
 
-            {/* Grid Container */}
+            {}
             <div className="space-y-3 max-h-[520px] overflow-y-auto pr-1">
-              {/* Phones Section */}
+              {}
               {(catalogTab === 'all' || catalogTab === 'phones') && availablePhones.length > 0 && (
                 <div className="space-y-2">
                   {catalogTab === 'all' && (
@@ -757,7 +767,7 @@ export default function POS() {
                 </div>
               )}
 
-              {/* Accessories Section */}
+              {}
               {(catalogTab === 'all' || catalogTab === 'accessories') && availableAccessories.length > 0 && (
                 <div className="space-y-2 pt-2 border-t border-slate-100">
                   {catalogTab === 'all' && (
@@ -824,7 +834,7 @@ export default function POS() {
                 </div>
               )}
 
-              {/* Empty state */}
+              {}
               {availablePhones.length === 0 && availableAccessories.length === 0 && (
                 <div className="py-12 text-center text-slate-400 text-xs">
                   <Package className="w-8 h-8 mx-auto text-slate-300 mb-2" />
@@ -836,10 +846,10 @@ export default function POS() {
 
         </div>
 
-        {/* Right Column (5 cols): Cart, Customer Details, Payment & Checkout */}
+        {}
         <div className="lg:col-span-5 space-y-4">
           
-          {/* Customer Selection Card */}
+          {}
           <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
@@ -940,7 +950,7 @@ export default function POS() {
             </div>
           </div>
 
-          {/* Cart Items List */}
+          {}
           <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
@@ -1005,7 +1015,7 @@ export default function POS() {
                             <div className="font-mono text-[10px] text-emerald-700 font-medium mt-0.5">IMEI: {item.imei1}</div>
                           )}
 
-                          {/* Tax Breakdown Badge */}
+                          {}
                           <div className="flex items-center gap-1.5 text-[10px] mt-1">
                             {isAccessory ? (
                               <>
@@ -1031,7 +1041,7 @@ export default function POS() {
 
                         <div className="flex items-center gap-2">
                           <div className="text-right">
-                            {/* Quantity selector for accessories */}
+                            {}
                             {isAccessory && (
                               <div className="flex items-center justify-end gap-1 mb-1">
                                 <button
@@ -1082,12 +1092,12 @@ export default function POS() {
                         </div>
                       </div>
 
-                      {/* Discount Control Section */}
+                      {}
                       <div className="pt-2 border-t border-slate-200/70 space-y-1.5">
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-1.5">
                             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Discount:</span>
-                            {/* Toggle % vs ₹ */}
+                            {}
                             <div className="inline-flex items-center bg-slate-200/70 p-0.5 rounded-lg text-[10px] font-bold">
                               <button
                                 type="button"
@@ -1106,7 +1116,7 @@ export default function POS() {
                             </div>
                           </div>
 
-                          {/* Discount Input */}
+                          {}
                           <div className="relative flex items-center">
                             <input
                               type="number"
@@ -1123,7 +1133,7 @@ export default function POS() {
                           </div>
                         </div>
 
-                        {/* Quick discount presets & badge */}
+                        {}
                         <div className="flex items-center justify-between gap-1 text-[10px]">
                           <div className="flex items-center gap-1">
                             <span className="text-slate-400 text-[9px]">Quick:</span>
@@ -1182,13 +1192,13 @@ export default function POS() {
               </div>
             )}
 
-            {/* Device Exchange / Trade-in Section */}
+            {}
             <div className={`rounded-xl border transition-all duration-200 overflow-hidden ${
               hasExchange 
                 ? 'bg-amber-50/40 border-amber-300 shadow-xs' 
                 : 'bg-slate-50/70 border-slate-200 hover:border-slate-300'
             }`}>
-              {/* Header Toggle */}
+              {}
               <div 
                 onClick={() => setHasExchange(!hasExchange)}
                 className="p-3 flex items-center justify-between cursor-pointer select-none"
@@ -1224,11 +1234,11 @@ export default function POS() {
                 </div>
               </div>
 
-              {/* Form Body when Active */}
+              {}
               {hasExchange && (
                 <div className="p-3 pt-0 border-t border-amber-200/80 space-y-2.5 text-xs animate-in fade-in duration-150">
                   
-                  {/* Brand Quick Selector */}
+                  {}
                   <div>
                     <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
                       Device Brand *
@@ -1260,7 +1270,7 @@ export default function POS() {
                     )}
                   </div>
 
-                  {/* Model & Variant / Color */}
+                  {}
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
@@ -1289,7 +1299,7 @@ export default function POS() {
                     </div>
                   </div>
 
-                  {/* IMEI 1 & Color */}
+                  {}
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
@@ -1329,7 +1339,7 @@ export default function POS() {
                     </div>
                   </div>
 
-                  {/* Condition Grade & Battery Health */}
+                  {}
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
@@ -1362,7 +1372,7 @@ export default function POS() {
                     </div>
                   </div>
 
-                  {/* Included Accessories Checkboxes */}
+                  {}
                   <div>
                     <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
                       Accessories Handed Over
@@ -1395,7 +1405,7 @@ export default function POS() {
                     </div>
                   </div>
 
-                  {/* Customer KYC ID Proof */}
+                  {}
                   <div className="grid grid-cols-2 gap-2 pt-1 border-t border-amber-200/60">
                     <div>
                       <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">
@@ -1428,7 +1438,7 @@ export default function POS() {
                     </div>
                   </div>
 
-                  {/* Agreed Exchange Valuation (₹) */}
+                  {}
                   <div className="pt-2 border-t border-amber-200">
                     <div className="flex items-center justify-between mb-1">
                       <label className="text-[10px] font-extrabold uppercase tracking-wider text-amber-950">
@@ -1449,7 +1459,7 @@ export default function POS() {
                         className="w-full pl-7 pr-3 py-2 text-sm font-bold text-emerald-800 bg-white border-2 border-amber-400 rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-amber-500"
                       />
                     </div>
-                    {/* Presets */}
+                    {}
                     <div className="flex items-center gap-1.5 mt-1.5">
                       {[3000, 5000, 8000, 10000, 15000, 20000].map(val => (
                         <button
@@ -1468,7 +1478,7 @@ export default function POS() {
               )}
             </div>
 
-            {/* Price Calculations */}
+            {}
             <div className="border-t border-slate-200 pt-3 space-y-1.5 text-xs">
               {phoneItems.length > 0 && (
                 <>
@@ -1517,7 +1527,7 @@ export default function POS() {
                 <span className="text-slate-900">{formatCurrency(grandTotal)}</span>
               </div>
 
-              {/* Exchange Deduction line */}
+              {}
               {hasExchange && exchangeValueNum > 0 && (
                 <div className="flex justify-between text-emerald-700 font-bold pt-1.5 border-t border-dashed border-slate-200">
                   <span>Exchange Credit ({exchangeDevice.brand} {exchangeDevice.model}):</span>
@@ -1525,14 +1535,14 @@ export default function POS() {
                 </div>
               )}
 
-              {/* Net Payable line */}
+              {}
               <div className="flex justify-between text-base font-black text-slate-900 pt-1.5 border-t-2 border-slate-900">
                 <span>Net Payable:</span>
                 <span className="text-emerald-700">{formatCurrency(netPayable)}</span>
               </div>
             </div>
 
-            {/* Payment Method Selector */}
+            {}
             <div className="pt-2 border-t border-slate-100">
               <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
                 Payment Method (for {formatCurrency(netPayable)})
@@ -1568,7 +1578,7 @@ export default function POS() {
               )}
             </div>
 
-            {/* Complete Sale Button */}
+            {}
             {!canEditPOS && (
               <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold flex items-center gap-2">
                 <span>🔒 View Only Mode: Sales checkout is restricted by administrator.</span>
@@ -1601,7 +1611,7 @@ export default function POS() {
 
       </div>
 
-      {/* Invoice Modal Popup upon completion */}
+      {}
       {completedInvoice && (
         <InvoiceModal
           invoiceData={completedInvoice}
@@ -1610,6 +1620,16 @@ export default function POS() {
             setCompletedInvoice(null);
             setCustomer({ id: null, full_name: '', phone: '', email: '', address: '', city: '', state: '', pincode: '', gstin: '' });
           }}
+        />
+      )}
+
+      {showQuickBillModal && (
+        <QuickBillModal
+          onClose={() => setShowQuickBillModal(false)}
+          onAdd={(item) => {
+            setCart([...cart, item]);
+          }}
+          systemTaxRate={systemTaxRate}
         />
       )}
 

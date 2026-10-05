@@ -1,29 +1,6 @@
-/**
- * Ecofone Tax & Pricing Calculation Utilities
- * 
- * Business Rules:
- * 1. Accessories are ALWAYS NEW.
- * 2. Accessories purchase and selling prices are GST-INCLUSIVE (default 18%).
- * 3. Double taxation is strictly prevented:
- *    Taxable Value = Inclusive Price * 100 / (100 + GST Rate) = Inclusive Price / 1.18
- *    GST Amount = Inclusive Price - Taxable Value
- * 4. Discounts are applied to the GST-inclusive selling price:
- *    Final Customer Price = Inclusive Price - Discount
- *    Taxable Consideration = Final Customer Price * 100 / 118
- *    Extracted GST = Final Customer Price - Taxable Consideration
- * 5. Phone billing uses Rule 32(5) Margin Scheme:
- *    Difference = max(0, Selling Price - Purchase Price)
- *    GST Amount = Difference * 5%
- *    Gross Total = Selling Price + GST Amount
- *    Final Customer Price = Gross Total - Discount
- */
 
-/**
- * Calculates GST-inclusive breakdown for a given inclusive amount
- * @param {number} inclusivePrice - Entered GST-inclusive price
- * @param {number} gstRate - Tax rate percentage (defaults to 18.0)
- * @returns {object} { inclusivePrice, taxableValue, gstAmount, cgst, sgst, igst, gstRate }
- */
+
+
 function calculateInclusiveGst(inclusivePrice, gstRate = 18.0) {
   const price = Math.max(0, parseFloat(inclusivePrice) || 0);
   const rate = Math.max(0, parseFloat(gstRate) || 18.0);
@@ -58,13 +35,7 @@ function calculateInclusiveGst(inclusivePrice, gstRate = 18.0) {
   };
 }
 
-/**
- * Calculates accessory sale pricing with discount
- * @param {number} sellingPriceInclusive - Entered selling price (includes 18% GST)
- * @param {number} discountAmount - Discount amount in Rupees
- * @param {number} gstRate - Tax rate (defaults to 18.0)
- * @param {boolean} isInterState - Whether customer is outside the store's state
- */
+
 function calculateAccessorySaleItem(sellingPriceInclusive, discountAmount = 0, gstRate = 18.0, isInterState = false) {
   const sPrice = Math.max(0, parseFloat(sellingPriceInclusive) || 0);
   const disc = Math.min(sPrice, Math.max(0, parseFloat(discountAmount) || 0));
@@ -97,12 +68,7 @@ function calculateAccessorySaleItem(sellingPriceInclusive, discountAmount = 0, g
   };
 }
 
-/**
- * Calculates accessory purchase entry batch
- * @param {number} quantity - Number of units purchased
- * @param {number} purchasePriceInclusive - Unit purchase price (includes 18% GST)
- * @param {number} gstRate - Tax rate (defaults to 18.0)
- */
+
 function calculateAccessoryPurchaseBatch(quantity, purchasePriceInclusive, gstRate = 18.0) {
   const qty = Math.max(1, parseInt(quantity, 10) || 1);
   const unitInclusive = Math.max(0, parseFloat(purchasePriceInclusive) || 0);

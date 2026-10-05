@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart3, FileSpreadsheet, Receipt, Users, Smartphone, Download, Calendar, Filter } from 'lucide-react';
 import { apiFetch } from '../../services/api';
+import { useStoreContext } from '../../context/StoreContext';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 
 export default function Reports() {
@@ -10,6 +11,7 @@ export default function Reports() {
   const [employeeData, setEmployeeData] = useState([]);
   const [invData, setInvData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { selectedStoreId } = useStoreContext();
 
   // Filters
   const [dateFrom, setDateFrom] = useState('');
@@ -22,19 +24,21 @@ export default function Reports() {
         let q = '/reports/sales?';
         if (dateFrom) q += `&date_from=${dateFrom}`;
         if (dateTo) q += `&date_to=${dateTo}`;
+        if (selectedStoreId) q += `&store_id=${selectedStoreId}`;
         const res = await apiFetch(q);
         if (res.success) setSalesData(res);
       } else if (activeTab === 'taxes') {
         let q = '/reports/taxes?';
         if (dateFrom) q += `&date_from=${dateFrom}`;
         if (dateTo) q += `&date_to=${dateTo}`;
+        if (selectedStoreId) q += `&store_id=${selectedStoreId}`;
         const res = await apiFetch(q);
         if (res.success) setTaxData(res);
       } else if (activeTab === 'employees') {
-        const res = await apiFetch('/reports/employee-performance');
+        const res = await apiFetch(`/reports/employee-performance?store_id=${selectedStoreId || ''}`);
         if (res.success) setEmployeeData(res.performance || []);
       } else if (activeTab === 'inventory') {
-        const res = await apiFetch('/inventory/stats');
+        const res = await apiFetch(`/inventory/stats?store_id=${selectedStoreId || ''}`);
         if (res.success) setInvData(res);
       }
     } catch (e) {
@@ -46,11 +50,11 @@ export default function Reports() {
 
   useEffect(() => {
     fetchReports();
-  }, [activeTab, dateFrom, dateTo]);
+  }, [activeTab, dateFrom, dateTo, selectedStoreId]);
 
   return (
     <div className="space-y-5">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
         <div>
           <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
@@ -62,7 +66,7 @@ export default function Reports() {
           </p>
         </div>
 
-        {/* Date Filter */}
+        {}
         <div className="flex items-center gap-2 text-xs">
           <input
             type="date"
@@ -80,7 +84,7 @@ export default function Reports() {
         </div>
       </div>
 
-      {/* Tabs */}
+      {}
       <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto text-xs font-bold">
         {[
           { id: 'sales', label: 'Sales & Turnovers', icon: FileSpreadsheet },
@@ -103,13 +107,13 @@ export default function Reports() {
         })}
       </div>
 
-      {/* Tab Content */}
+      {}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-5">
         {loading ? (
           <div className="py-16 text-center text-slate-400 text-xs">Generating report data...</div>
         ) : activeTab === 'sales' && salesData ? (
           <div className="space-y-6 text-xs">
-            {/* Sales Totals */}
+            {}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="p-3 bg-slate-50 rounded-xl border">
                 <span className="text-slate-400 uppercase text-[10px] font-bold block">Gross Turnover</span>
@@ -129,7 +133,7 @@ export default function Reports() {
               </div>
             </div>
 
-            {/* Store Breakdown Table */}
+            {}
             <div>
               <h4 className="font-bold text-slate-800 text-sm mb-2">Store-Wise Turnover</h4>
               <table className="w-full text-left border-collapse">
@@ -160,7 +164,7 @@ export default function Reports() {
           </div>
         ) : activeTab === 'taxes' && taxData ? (
           <div className="space-y-6 text-xs">
-            {/* Tax Summary Cards */}
+            {}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="p-3 bg-slate-50 rounded-xl border">
                 <span className="text-slate-400 uppercase text-[10px] font-bold block">Taxable Sales</span>
@@ -180,7 +184,7 @@ export default function Reports() {
               </div>
             </div>
 
-            {/* GST Table */}
+            {}
             <div>
               <h4 className="font-bold text-slate-800 text-sm mb-2">Store-Wise GST Breakdown</h4>
               <table className="w-full text-left border-collapse">

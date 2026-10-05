@@ -136,7 +136,7 @@ export default function Transfers() {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
         <div>
           <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
@@ -157,7 +157,7 @@ export default function Transfers() {
         </button>
       </div>
 
-      {/* Transfers List */}
+      {}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         {loading ? (
           <div className="py-16 text-center text-slate-400 text-xs">Loading stock transfers...</div>
@@ -256,7 +256,7 @@ export default function Transfers() {
         )}
       </div>
 
-      {/* New Transfer Modal */}
+      {}
       {showModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-xl w-full p-6 text-xs space-y-4">
@@ -294,7 +294,7 @@ export default function Transfers() {
                 </div>
               </div>
 
-              {/* Phone Selection */}
+              {}
               <div>
                 <label className="font-bold text-slate-600 block mb-1">
                   Select Phones to Dispatch ({selectedPhoneIds.length} selected)
@@ -364,7 +364,7 @@ export default function Transfers() {
         </div>
       )}
 
-      {/* Transfer Items Modal */}
+      {}
       {selectedTransfer && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-lg w-full p-6 text-xs space-y-4">

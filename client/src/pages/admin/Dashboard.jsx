@@ -16,6 +16,7 @@ import {
   Eye
 } from 'lucide-react';
 import { apiFetch } from '../../services/api';
+import { useStoreContext } from '../../context/StoreContext';
 import { formatCurrency, formatDate, formatDateTime } from '../../utils/formatters';
 import StatCard from '../../components/ui/StatCard';
 import InvoiceModal from '../../components/invoice/InvoiceModal';
@@ -24,7 +25,10 @@ import IMEILifecycleModal from '../../components/ui/IMEILifecycleModal';
 export default function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState('all'); // 'today', 'yesterday', '7days', '30days', 'this_month', 'all'
+  const { selectedStoreId } = useStoreContext();
+  const [period, setPeriod] = useState('all'); // 'today', 'yesterday', '7days', '30days', 'this_month', 'all', 'custom'
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [sortKey, setSortKey] = useState('revenue');
   const [sortDesc, setSortDesc] = useState(true);
 
@@ -35,7 +39,15 @@ export default function Dashboard() {
   const fetchDashboard = async () => {
     setLoading(true);
     try {
-      const res = await apiFetch(`/dashboard?period=${period}`);
+      let url = `/dashboard?period=${period}&store_id=${selectedStoreId || ''}`;
+      if (period === 'custom') {
+        if (!startDate || !endDate) {
+          setLoading(false);
+          return;
+        }
+        url += `&start_date=${startDate}&end_date=${endDate}`;
+      }
+      const res = await apiFetch(url);
       if (res.success) {
         setData(res);
       }
@@ -47,12 +59,13 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
+    if (period === 'custom' && (!startDate || !endDate)) return;
     fetchDashboard();
-  }, [period]);
+  }, [period, selectedStoreId, startDate, endDate]);
 
   const viewInvoice = async (saleId) => {
     try {
-      const res = await apiFetch(`/sales/${saleId}`);
+      const res = await apiFetch(`/sales/${saleId}?store_id=${selectedStoreId || ''}`);
       if (res.success) {
         setSelectedInvoice(res);
       }
@@ -91,7 +104,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       
-      {/* Top Banner & Date Filter */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
         <div>
           <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">
@@ -102,7 +115,7 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Date Filter Pills */}
+        {}
         <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold overflow-x-auto">
           {[
             { id: 'today', label: 'Today' },
@@ -110,7 +123,8 @@ export default function Dashboard() {
             { id: '7days', label: 'Last 7 Days' },
             { id: '30days', label: 'Last 30 Days' },
             { id: 'this_month', label: 'This Month' },
-            { id: 'all', label: 'All Time' }
+            { id: 'all', label: 'All Time' },
+            { id: 'custom', label: 'Custom' }
           ].map(p => (
             <button
               key={p.id}
@@ -123,7 +137,33 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 8 Metric Stat Cards */}
+      {/* Custom Date Picker */}
+      {period === 'custom' && (
+        <div className="flex items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-slate-400" />
+            <span className="text-sm font-semibold text-slate-700">Custom Date Range:</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <input 
+              type="date" 
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-400"
+            />
+            <span className="text-slate-400 text-sm">to</span>
+            <input 
+              type="date" 
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              min={startDate}
+              className="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-400"
+            />
+          </div>
+        </div>
+      )}
+
+      {}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
           title="Period Sales Revenue"
@@ -183,7 +223,7 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* SECTION 38: Store Comparison Table (Physical Stores Matrix) */}
+      {}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
@@ -285,10 +325,10 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Two Column Section: Top Brands & Recent Sales */}
+      {}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         
-        {/* Brand Share (5 cols) */}
+        {}
         <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -319,7 +359,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Recent Invoiced Sales (7 cols) */}
+        {}
         <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -361,7 +401,7 @@ export default function Dashboard() {
 
       </div>
 
-      {/* Invoice Viewer Modal */}
+      {}
       {selectedInvoice && (
         <InvoiceModal
           invoiceData={selectedInvoice}
@@ -369,7 +409,7 @@ export default function Dashboard() {
         />
       )}
 
-      {/* IMEI Lifecycle Modal */}
+      {}
       {selectedIMEI && (
         <IMEILifecycleModal
           imei={selectedIMEI}

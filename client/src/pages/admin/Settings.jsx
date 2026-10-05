@@ -88,7 +88,7 @@ export default function Settings() {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
         <div>
           <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
@@ -102,7 +102,7 @@ export default function Settings() {
       </div>
 
       <form onSubmit={handleSave} className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-5 text-xs">
-        {/* Brand Information */}
+        {}
         <div className="space-y-3">
           <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2 pb-2 border-b">
             <Building2 className="w-4 h-4 text-emerald-600" />
@@ -173,7 +173,7 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Invoice & Tax Settings */}
+        {}
         <div className="space-y-3 pt-4">
           <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2 pb-2 border-b">
             <Receipt className="w-4 h-4 text-emerald-600" />

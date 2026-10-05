@@ -3,24 +3,21 @@
   "version": "1.0.0",
   "description": "Ecofone Multi-Store POS, Inventory & Business Management System - Backend",
   "main": "src/index.js",
-  "engines": {
-    "node": "20"
-  },
   "scripts": {
-    "start": "npm --prefix .. start",
+    "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "seed": "node src/db/seed.js",
-    "export-mysql": "node src/db/export_mysql.js"
+    "db:push": "npx prisma db push",
+    "seed": "node src/db/seed.js"
   },
   "dependencies": {
+    "@prisma/client": "^5.22.0",
     "bcryptjs": "^2.4.3",
-    "better-sqlite3": "^11.7.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.1",
     "jsonwebtoken": "^9.0.2",
-    "knex": "^3.1.0",
     "multer": "^1.4.5-lts.1",
+    "prisma": "^5.22.0",
     "uuid": "^11.0.3"
   }
 }

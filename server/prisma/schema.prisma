@@ -1,0 +1,592 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// MODELS
+// ─────────────────────────────────────────────
+
+model Store {
+  id        Int      @id @default(autoincrement())
+  name      String
+  code      String   @unique
+  address   String?
+  city      String
+  state     String
+  pincode   String?
+  phone     String?
+  email     String?
+  gstin     String?
+  manager   String?
+  status    String   @default("active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  users              User[]
+  phoneInventory     PhoneInventory[]
+  purchases          Purchase[]
+  sales              Sale[]
+  transfersFrom      StockTransfer[]    @relation("FromStore")
+  transfersTo        StockTransfer[]    @relation("ToStore")
+  returns            Return[]
+  expenses           Expense[]
+  notifications      Notification[]
+  customers          Customer[]
+  exchangedPhones    ExchangedPhone[]
+  accessories        Accessory[]
+  accessoryPurchases AccessoryPurchase[]
+
+  @@map("stores")
+}
+
+model User {
+  id                  Int       @id @default(autoincrement())
+  employeeId          String    @unique @map("employee_id")
+  username            String    @unique
+  passwordHash        String    @map("password_hash")
+  fullName            String    @map("full_name")
+  phone               String?
+  email               String?
+  address             String?
+  role                String
+  assignedStoreId     Int?      @map("assigned_store_id")
+  status              String    @default("active")
+  permissions         String?
+  failedLoginAttempts Int       @default(0) @map("failed_login_attempts")
+  lockedUntil         DateTime? @map("locked_until")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  assignedStore      Store?          @relation(fields: [assignedStoreId], references: [id])
+  sales              Sale[]          @relation("EmployeeSales")
+  initiatedTransfers StockTransfer[] @relation("InitiatedBy")
+  receivedTransfers  StockTransfer[] @relation("ReceivedBy")
+  purchases          Purchase[]
+  processedReturns   Return[]
+  expenses           Expense[]
+  exchangedPhones    ExchangedPhone[]
+
+  @@map("users")
+}
+
+model Supplier {
+  id            Int      @id @default(autoincrement())
+  name          String
+  contactPerson String?  @map("contact_person")
+  phone         String?
+  email         String?
+  address       String?
+  city          String?
+  state         String?
+  gstin         String?
+  status        String   @default("active")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  phoneInventory     PhoneInventory[]
+  purchases          Purchase[]
+  accessories        Accessory[]
+  accessoryPurchases AccessoryPurchase[]
+
+  @@map("suppliers")
+}
+
+model Brand {
+  id          Int          @id @default(autoincrement())
+  name        String       @unique
+  status      String       @default("active")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  phoneModels PhoneModel[]
+
+  @@map("brands")
+}
+
+model PhoneModel {
+  id        Int      @id @default(autoincrement())
+  brandId   Int      @map("brand_id")
+  name      String
+  status    String   @default("active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@unique([brandId, name])
+  @@map("phone_models")
+}
+
+model Grade {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String?
+  status      String  @default("active")
+
+  @@map("grades")
+}
+
+model PhoneInventory {
+  id                   Int       @id @default(autoincrement())
+  internalProductId    String    @unique @map("internal_product_id")
+  brand                String
+  model                String
+  variant              String?
+  ram                  String?
+  storage              String?
+  color                String?
+  imei1                String    @unique
+  imei2                String?   @unique
+  serialNumber         String?   @map("serial_number")
+  conditionGrade       String    @default("Grade A") @map("condition_grade")
+  batteryHealth        String?   @map("battery_health")
+  purchasePrice        Float     @default(0) @map("purchase_price")
+  refurbishmentCost    Float     @default(0) @map("refurbishment_cost")
+  additionalCost       Float     @default(0) @map("additional_cost")
+  totalCost            Float     @default(0) @map("total_cost")
+  sellingPrice         Float     @default(0) @map("selling_price")
+  discount             Float?    @default(0)
+  taxRate              Float?    @default(5.0) @map("tax_rate")
+  finalSellingPrice    Float     @default(0) @map("final_selling_price")
+  supplierId           Int?      @map("supplier_id")
+  purchaseId           Int?      @map("purchase_id")
+  purchaseDate         DateTime? @map("purchase_date")
+  warrantyPeriodMonths Int?      @default(6) @map("warranty_period_months")
+  warrantyExpiry       DateTime? @map("warranty_expiry")
+  currentStoreId       Int       @map("current_store_id")
+  stockStatus          String    @default("AVAILABLE") @map("stock_status")
+  dateAdded            DateTime? @default(now()) @map("date_added")
+  dateSold             DateTime? @map("date_sold")
+  notes                String?
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  currentStore  Store     @relation(fields: [currentStoreId], references: [id])
+  supplier      Supplier? @relation(fields: [supplierId], references: [id])
+  saleItems     SaleItem[]
+  transferItems StockTransferItem[]
+  returnItems   ReturnItem[]
+  warranties    Warranty[]
+
+  @@index([currentStoreId], name: "idx_phone_inventory_store")
+  @@index([stockStatus],    name: "idx_phone_inventory_status")
+  @@map("phone_inventory")
+}
+
+model Customer {
+  id             Int      @id @default(autoincrement())
+  customerCode   String   @unique @map("customer_code")
+  fullName       String   @map("full_name")
+  phone          String
+  email          String?
+  address        String?
+  city           String?
+  state          String?
+  pincode        String?
+  gstin          String?
+  idProofType    String?  @map("id_proof_type")
+  idProofNumber  String?  @map("id_proof_number")
+  totalPurchases Int      @default(0) @map("total_purchases")
+  totalSpent     Float    @default(0) @map("total_spent")
+  storeId        Int?     @map("store_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  store           Store?           @relation(fields: [storeId], references: [id])
+  sales           Sale[]
+  returns         Return[]
+  warranties      Warranty[]
+  exchangedPhones ExchangedPhone[]
+
+  @@index([phone],   name: "idx_customers_phone")
+  @@index([storeId], name: "idx_customers_store")
+  @@map("customers")
+}
+
+model Purchase {
+  id             Int      @id @default(autoincrement())
+  purchaseNumber String   @unique @map("purchase_number")
+  invoiceNumber  String?  @map("invoice_number")
+  supplierId     Int      @map("supplier_id")
+  storeId        Int      @map("store_id")
+  purchaseDate   DateTime @map("purchase_date")
+  totalAmount    Float    @default(0) @map("total_amount")
+  taxAmount      Float    @default(0) @map("tax_amount")
+  notes          String?
+  createdBy      Int?     @map("created_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  supplier Supplier @relation(fields: [supplierId], references: [id])
+  store    Store    @relation(fields: [storeId], references: [id])
+  creator  User?    @relation(fields: [createdBy], references: [id])
+
+  @@map("purchases")
+}
+
+model Sale {
+  id            Int      @id @default(autoincrement())
+  saleNumber    String   @unique @map("sale_number")
+  invoiceNumber String   @unique @map("invoice_number")
+  saleDate      DateTime @default(now()) @map("sale_date")
+  storeId       Int      @map("store_id")
+  employeeId    Int      @map("employee_id")
+  customerId    Int      @map("customer_id")
+  subtotal      Float    @default(0)
+  discountTotal Float    @default(0) @map("discount_total")
+  taxableAmount Float    @default(0) @map("taxable_amount")
+  cgst          Float    @default(0)
+  sgst          Float    @default(0)
+  igst          Float    @default(0)
+  totalTax      Float    @default(0) @map("total_tax")
+  grandTotal    Float    @default(0) @map("grand_total")
+  exchangeAmount Float   @default(0) @map("exchange_amount")
+  netPayable    Float    @default(0) @map("net_payable")
+  paymentStatus String   @default("PAID") @map("payment_status")
+  status        String   @default("COMPLETED")
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  store           Store            @relation(fields: [storeId], references: [id])
+  employee        User             @relation("EmployeeSales", fields: [employeeId], references: [id])
+  customer        Customer         @relation(fields: [customerId], references: [id])
+  saleItems       SaleItem[]
+  payments        Payment[]
+  returns         Return[]
+  warranties      Warranty[]
+  exchangedPhones ExchangedPhone[]
+
+  @@index([storeId],       name: "idx_sales_store")
+  @@index([saleDate],      name: "idx_sales_date")
+  @@index([invoiceNumber], name: "idx_sales_invoice")
+  @@map("sales")
+}
+
+model SaleItem {
+  id                   Int       @id @default(autoincrement())
+  saleId               Int       @map("sale_id")
+  phoneId              Int?      @map("phone_id")
+  accessoryId          Int?      @map("accessory_id")
+  itemType             String    @default("PHONE") @map("item_type")
+  imei1                String?
+  brand                String
+  model                String
+  variant              String?
+  conditionGrade       String?   @map("condition_grade")
+  unitCost             Float     @map("unit_cost")
+  sellingPrice         Float     @map("selling_price")
+  discount             Float     @default(0)
+  taxableAmount        Float     @map("taxable_amount")
+  taxRate              Float     @default(18.0) @map("tax_rate")
+  accessoryQuantity    Int       @default(0) @map("accessory_quantity")
+  cgst                 Float     @default(0)
+  sgst                 Float     @default(0)
+  igst                 Float     @default(0)
+  totalTax             Float     @map("total_tax")
+  finalPrice           Float     @map("final_price")
+  isExchangeItem       Int       @default(0) @map("is_exchange_item")
+  isQuickBill          Int       @default(0) @map("is_quick_bill")
+  warrantyPeriodMonths Int?      @default(6) @map("warranty_period_months")
+  warrantyExpiry       DateTime? @map("warranty_expiry")
+  quantity             Int       @default(1)
+  createdAt            DateTime  @default(now()) @map("created_at")
+
+  sale      Sale            @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  phone     PhoneInventory? @relation(fields: [phoneId], references: [id])
+
+  @@map("sale_items")
+}
+
+model Payment {
+  id              Int      @id @default(autoincrement())
+  saleId          Int      @map("sale_id")
+  paymentMethod   String   @map("payment_method")
+  amount          Float
+  referenceNumber String?  @map("reference_number")
+  paymentDate     DateTime @default(now()) @map("payment_date")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  sale Sale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model StockTransfer {
+  id             Int       @id @default(autoincrement())
+  transferNumber String    @unique @map("transfer_number")
+  fromStoreId    Int       @map("from_store_id")
+  toStoreId      Int       @map("to_store_id")
+  transferDate   DateTime  @map("transfer_date")
+  receivedDate   DateTime? @map("received_date")
+  initiatedBy    Int       @map("initiated_by")
+  receivedBy     Int?      @map("received_by")
+  status         String    @default("Pending")
+  notes          String?
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  fromS     Store              @relation("FromStore", fields: [fromStoreId], references: [id])
+  toS       Store              @relation("ToStore", fields: [toStoreId], references: [id])
+  initiator User               @relation("InitiatedBy", fields: [initiatedBy], references: [id])
+  receiver  User?              @relation("ReceivedBy", fields: [receivedBy], references: [id])
+  items     StockTransferItem[]
+
+  @@map("stock_transfers")
+}
+
+model StockTransferItem {
+  id         Int      @id @default(autoincrement())
+  transferId Int      @map("transfer_id")
+  phoneId    Int      @map("phone_id")
+  imei1      String
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  transfer StockTransfer  @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  phone    PhoneInventory @relation(fields: [phoneId], references: [id])
+
+  @@map("stock_transfer_items")
+}
+
+model Return {
+  id            Int      @id @default(autoincrement())
+  returnNumber  String   @unique @map("return_number")
+  saleId        Int      @map("sale_id")
+  invoiceNumber String   @map("invoice_number")
+  storeId       Int      @map("store_id")
+  customerId    Int      @map("customer_id")
+  returnDate    DateTime @default(now()) @map("return_date")
+  reason        String
+  status        String   @default("Requested")
+  refundAmount  Float    @default(0) @map("refund_amount")
+  refundMethod  String   @default("Original Payment Method") @map("refund_method")
+  notes         String?
+  processedBy   Int?     @map("processed_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  sale      Sale       @relation(fields: [saleId], references: [id])
+  store     Store      @relation(fields: [storeId], references: [id])
+  customer  Customer   @relation(fields: [customerId], references: [id])
+  processor User?      @relation(fields: [processedBy], references: [id])
+  items     ReturnItem[]
+
+  @@map("returns")
+}
+
+model ReturnItem {
+  id                Int      @id @default(autoincrement())
+  returnId          Int      @map("return_id")
+  phoneId           Int      @map("phone_id")
+  imei1             String
+  saleItemId        Int?     @map("sale_item_id")
+  conditionReceived String?  @map("condition_received")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  return Return        @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  phone  PhoneInventory @relation(fields: [phoneId], references: [id])
+
+  @@map("return_items")
+}
+
+model Warranty {
+  id                   Int      @id @default(autoincrement())
+  phoneId              Int      @map("phone_id")
+  imei1                String
+  customerId           Int      @map("customer_id")
+  saleId               Int      @map("sale_id")
+  invoiceNumber        String   @map("invoice_number")
+  warrantyPeriodMonths Int      @default(6) @map("warranty_period_months")
+  startDate            DateTime @map("start_date")
+  endDate              DateTime @map("end_date")
+  status               String   @default("Active")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  phone    PhoneInventory @relation(fields: [phoneId], references: [id])
+  customer Customer       @relation(fields: [customerId], references: [id])
+  sale     Sale           @relation(fields: [saleId], references: [id])
+
+  @@index([imei1],         name: "idx_warranties_imei")
+  @@index([invoiceNumber], name: "idx_warranties_invoice")
+  @@map("warranties")
+}
+
+model Expense {
+  id            Int      @id @default(autoincrement())
+  storeId       Int?     @map("store_id")
+  category      String
+  description   String
+  amount        Float
+  expenseDate   DateTime @map("expense_date")
+  receiptNumber String?  @map("receipt_number")
+  createdBy     Int?     @map("created_by")
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  store   Store? @relation(fields: [storeId], references: [id])
+  creator User?  @relation(fields: [createdBy], references: [id])
+
+  @@index([storeId, expenseDate], name: "idx_expenses_store_date")
+  @@map("expenses")
+}
+
+model TaxRate {
+  id        Int      @id @default(autoincrement())
+  name      String
+  rate      Float
+  cgstRate  Float    @map("cgst_rate")
+  sgstRate  Float    @map("sgst_rate")
+  igstRate  Float    @map("igst_rate")
+  isDefault Int      @default(0) @map("is_default")
+  status    String   @default("active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("tax_rates")
+}
+
+model Setting {
+  key       String   @id
+  value     String
+  groupName String   @default("general") @map("group_name")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int?     @map("user_id")
+  username   String?
+  action     String
+  storeId    Int?     @map("store_id")
+  entityType String?  @map("entity_type")
+  entityId   String?  @map("entity_id")
+  details    String?
+  ipAddress  String?  @map("ip_address")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt], name: "idx_audit_created")
+  @@index([userId],    name: "idx_audit_user")
+  @@index([storeId],   name: "idx_audit_store")
+  @@map("audit_logs")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int?     @map("user_id")
+  storeId   Int?     @map("store_id")
+  type      String
+  title     String
+  message   String
+  isRead    Int      @default(0) @map("is_read")
+  link      String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  store Store? @relation(fields: [storeId], references: [id])
+
+  @@map("notifications")
+}
+
+model ExchangedPhone {
+  id                    Int       @id @default(autoincrement())
+  exchangeNumber        String    @unique @map("exchange_number")
+  saleId                Int?      @map("sale_id")
+  invoiceNumber         String?   @map("invoice_number")
+  storeId               Int       @map("store_id")
+  employeeId            Int       @map("employee_id")
+  customerId            Int       @map("customer_id")
+  customerName          String    @map("customer_name")
+  customerPhone         String    @map("customer_phone")
+  customerEmail         String?   @map("customer_email")
+  customerAddress       String?   @map("customer_address")
+  customerIdProofType   String?   @map("customer_id_proof_type")
+  customerIdProofNumber String?   @map("customer_id_proof_number")
+  brand                 String
+  model                 String
+  variant               String?
+  color                 String?
+  imei1                 String
+  imei2                 String?
+  serialNumber          String?   @map("serial_number")
+  conditionGrade        String    @default("Grade B") @map("condition_grade")
+  batteryHealth         String?   @map("battery_health")
+  deviceCondition       String?   @map("device_condition")
+  functionalIssues      String?   @map("functional_issues")
+  accessoriesIncluded   String?   @map("accessories_included")
+  exchangeValue         Float     @default(0) @map("exchange_value")
+  status                String    @default("IN_STOCK")
+  phoneInventoryId      Int?      @map("phone_inventory_id")
+  exchangeDate          DateTime  @default(now()) @map("exchange_date")
+  notes                 String?
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  sale     Sale?    @relation(fields: [saleId], references: [id], onDelete: SetNull)
+  store    Store    @relation(fields: [storeId], references: [id])
+  employee User     @relation(fields: [employeeId], references: [id])
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@index([imei1],   name: "idx_exchanged_phones_imei1")
+  @@index([storeId], name: "idx_exchanged_phones_store")
+  @@map("exchanged_phones")
+}
+
+model Accessory {
+  id                     Int      @id @default(autoincrement())
+  accessoryId            String   @unique @map("accessory_id")
+  sku                    String   @unique
+  barcode                String?
+  name                   String
+  category               String
+  brand                  String
+  variant                String?
+  description            String?
+  supplierId             Int?     @map("supplier_id")
+  supplierName           String?  @map("supplier_name")
+  purchasePriceInclusive Float    @default(0) @map("purchase_price_inclusive")
+  purchaseTaxableValue   Float    @default(0) @map("purchase_taxable_value")
+  purchaseGst            Float    @default(0) @map("purchase_gst")
+  mrpInclusive           Float    @default(0) @map("mrp_inclusive")
+  sellingPriceInclusive  Float    @default(0) @map("selling_price_inclusive")
+  sellingTaxableValue    Float    @default(0) @map("selling_taxable_value")
+  sellingGst             Float    @default(0) @map("selling_gst")
+  gstRate                Float    @default(18.0) @map("gst_rate")
+  priceIncludesGst       Int      @default(1) @map("price_includes_gst")
+  quantity               Int      @default(0)
+  minimumStock           Int      @default(5) @map("minimum_stock")
+  reorderLevel           Int      @default(10) @map("reorder_level")
+  storeId                Int      @map("store_id")
+  warrantyPeriod         String?  @default("6 Months") @map("warranty_period")
+  status                 String   @default("In Stock")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  store     Store     @relation(fields: [storeId], references: [id])
+  supplier  Supplier? @relation(fields: [supplierId], references: [id])
+  purchases AccessoryPurchase[]
+
+  @@index([storeId, status], name: "idx_accessories_store_status")
+  @@map("accessories")
+}
+
+model AccessoryPurchase {
+  id                     Int      @id @default(autoincrement())
+  purchaseOrderNo        String?  @map("purchase_order_no")
+  supplierId             Int?     @map("supplier_id")
+  supplierName           String?  @map("supplier_name")
+  accessoryId            Int?     @map("accessory_id")
+  quantity               Int
+  purchasePriceInclusive Float    @map("purchase_price_inclusive")
+  taxableValuePerUnit    Float    @map("taxable_value_per_unit")
+  gstPerUnit             Float    @map("gst_per_unit")
+  totalPurchaseValue     Float    @map("total_purchase_value")
+  totalTaxableValue      Float    @map("total_taxable_value")
+  totalGst               Float    @map("total_gst")
+  purchaseDate           DateTime @default(now()) @map("purchase_date")
+  storeId                Int      @map("store_id")
+
+  accessory Accessory? @relation(fields: [accessoryId], references: [id])
+  supplier  Supplier?  @relation(fields: [supplierId], references: [id])
+  store     Store      @relation(fields: [storeId], references: [id])
+
+  @@index([accessoryId], name: "idx_acc_purchases_acc")
+  @@map("accessory_purchases")
+}

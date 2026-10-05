@@ -3,7 +3,18 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const db = require('./db/database');
+const prisma = require('./db/prisma');
+const { createBackup } = require('./utils/backup');
+
+// Start the backup system (the file itself starts the daily interval, we just require it)
+// WAL Checkpoint every 5 minutes
+setInterval(() => {
+  try {
+    prisma.$executeRawUnsafe('PRAGMA wal_checkpoint(TRUNCATE)');
+  } catch(e) {
+    console.error('WAL checkpoint error:', e);
+  }
+}, 5 * 60 * 1000);
 
 const authRoutes = require('./routes/auth');
 const storeRoutes = require('./routes/stores');
@@ -24,19 +35,30 @@ const accessoryRoutes = require('./routes/accessories');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',') 
+  : ['http://localhost:5173'];
+
 app.use(cors({
-  origin: '*',
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS: Origin ${origin} not allowed`));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Health Check
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
   try {
-    const count = db.prepare("SELECT count(*) as c FROM stores WHERE status = 'active'").get()?.c || 1;
+    const count = await prisma.store.count({ where: { status: 'active' } });
     res.json({
       status: 'healthy',
       database: 'connected',
@@ -54,6 +76,8 @@ app.get('/api/health', (req, res) => {
     });
   }
 });
+
+const { enforceStoreContext } = require('./middleware/storeContext');
 
 // Mount Routes
 app.use('/api/auth', authRoutes);
@@ -92,11 +116,7 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`\n======================================================`);
-  console.log(`🚀 Ecofone POS & Multi-Store Server running on port ${PORT}`);
-  console.log(`🏬 Managing 12 Physical Stores Across India`);
-  console.log(`👉 API Health: http://localhost:${PORT}/api/health`);
-  console.log(`======================================================\n`);
+  console.log(`Server running on port ${PORT}`);
 });
 
 module.exports = app;

@@ -123,6 +123,17 @@ export const EMPLOYEE_MODULES = [
   }
 ];
 
+export const ADMIN_DELETE_MODULES = [
+  { key: 'invoices', label: 'Permanent Delete Invoices' },
+  { key: 'inventory', label: 'Delete Stock / Inventory' },
+  { key: 'accessories', label: 'Delete Accessories' },
+  { key: 'returns', label: 'Delete Returns Records' },
+  { key: 'exchanged_phones', label: 'Delete Exchanged Phones' },
+  { key: 'customers', label: 'Delete Customers' },
+  { key: 'expenses', label: 'Delete Expenses' },
+  { key: 'transfers', label: 'Delete Stock Transfers' }
+];
+
 export default function PermissionsModal({ employee, onClose, onUpdated }) {
   if (!employee) return null;
 
@@ -168,6 +179,21 @@ export default function PermissionsModal({ employee, onClose, onUpdated }) {
         [moduleKey]: {
           ...current,
           edit: !current.edit
+        }
+      };
+    });
+    setSuccessMsg('');
+  };
+
+  // Toggle Delete Permission (Admin Only)
+  const handleToggleDelete = (moduleKey) => {
+    setPermissions(prev => {
+      const current = prev[moduleKey] || { view: true, edit: true, delete: false };
+      return {
+        ...prev,
+        [moduleKey]: {
+          ...current,
+          delete: !current.delete
         }
       };
     });
@@ -259,7 +285,7 @@ export default function PermissionsModal({ employee, onClose, onUpdated }) {
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150">
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden">
         
-        {/* Header */}
+        {}
         <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
@@ -283,7 +309,7 @@ export default function PermissionsModal({ employee, onClose, onUpdated }) {
           </button>
         </div>
 
-        {/* Action Presets Toolbar */}
+        {}
         <div className="px-6 py-3 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
           <div className="flex items-center gap-2">
             <span className="font-bold text-slate-600 uppercase tracking-wider text-[10px]">Quick Presets:</span>
@@ -327,7 +353,7 @@ export default function PermissionsModal({ employee, onClose, onUpdated }) {
           </div>
         </div>
 
-        {/* Notification alerts */}
+        {}
         {error && (
           <div className="mx-6 mt-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
             <ShieldAlert className="w-4 h-4 shrink-0" />
@@ -341,7 +367,7 @@ export default function PermissionsModal({ employee, onClose, onUpdated }) {
           </div>
         )}
 
-        {/* Modules List */}
+        {}
         <div className="flex-1 overflow-y-auto p-6 space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {EMPLOYEE_MODULES.map((mod) => {
@@ -381,9 +407,9 @@ export default function PermissionsModal({ employee, onClose, onUpdated }) {
                     </div>
                   </div>
 
-                  {/* Toggles */}
+                  {}
                   <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
-                    {/* Toggle Open / Access */}
+                    {}
                     <button
                       type="button"
                       onClick={() => handleToggleView(mod.key)}
@@ -398,7 +424,7 @@ export default function PermissionsModal({ employee, onClose, onUpdated }) {
                       <span>{perm.view ? 'Can Open' : 'Blocked'}</span>
                     </button>
 
-                    {/* Toggle Edit Access (if supported) */}
+                    {}
                     {mod.supportsEdit ? (
                       <button
                         type="button"
@@ -424,9 +450,41 @@ export default function PermissionsModal({ employee, onClose, onUpdated }) {
               );
             })}
           </div>
+
+          {employee.role === 'admin' && (
+            <div className="mt-8 border-t border-slate-200 pt-6">
+              <h4 className="font-bold text-slate-800 flex items-center gap-2 mb-4">
+                <ShieldAlert className="w-5 h-5 text-rose-500" />
+                Advanced Delete Permissions (Admin Only)
+              </h4>
+              <p className="text-[11px] text-slate-500 mb-4">
+                Grant specific delete privileges to this normal admin. Only grant these to highly trusted administrators.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {ADMIN_DELETE_MODULES.map(mod => {
+                  const perm = permissions[mod.key] || {};
+                  const canDelete = !!perm.delete;
+                  return (
+                    <div key={mod.key} className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white">
+                      <span className="text-xs font-bold text-slate-700">{mod.label}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleDelete(mod.key)}
+                        className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase transition ${
+                          canDelete ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-400'
+                        }`}
+                      >
+                        {canDelete ? 'Can Delete' : 'No Access'}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Footer */}
+        {}
         <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
           <p className="text-[11px] text-slate-500">
             Changes take effect immediately on employee's next page view or refresh.

@@ -17,7 +17,7 @@ export default function Profile() {
         </p>
       </div>
 
-      {/* Profile Overview */}
+      {}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4 text-xs">
         <div className="flex items-center gap-4 border-b pb-5">
           <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-extrabold text-lg border border-emerald-200">

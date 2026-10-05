@@ -90,23 +90,23 @@ export default function Sidebar({ isOpen, setIsOpen }) {
 
   return (
     <>
-      {/* Mobile Backdrop */}
+      {/* Mobile backdrop */}
       {isOpen && (
         <div 
           onClick={() => setIsOpen(false)} 
-          className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-40 lg:hidden"
+          className="fixed inset-0 bg-slate-900/30 backdrop-blur-xs z-40 lg:hidden"
         />
       )}
 
-      {/* Sidebar Panel */}
+      {/* Main Sidebar */}
       <aside className={`
-        fixed lg:sticky top-0 left-0 z-50 h-screen w-64 bg-slate-900 text-white flex flex-col
-        transition-transform duration-300 ease-in-out border-r border-slate-800
+        fixed lg:sticky top-0 left-0 z-50 h-screen w-64 bg-white text-slate-800 flex flex-col
+        transition-transform duration-300 ease-in-out border-r border-slate-200/90 shadow-sm
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        {/* Brand Header */}
-        <div className="p-4 border-b border-slate-800/80 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white p-1 flex items-center justify-center shadow-md shrink-0">
+        {/* Logo and Brand */}
+        <div className="p-4 border-b border-slate-100 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200/80 p-1 flex items-center justify-center shadow-xs shrink-0">
             <img 
               src="/logo.png" 
               alt="Ecofone Logo" 
@@ -116,27 +116,27 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="font-extrabold text-base tracking-tight text-white">EcoFone</span>
-              <span className="text-[10px] uppercase font-bold tracking-wider bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded">POS</span>
+              <span className="font-extrabold text-base tracking-tight text-slate-900">EcoFone</span>
+              <span className="text-[10px] uppercase font-bold tracking-wider bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">POS</span>
             </div>
-            <p className="text-[11px] text-amber-400 font-medium tracking-wide">Luxury within reach</p>
+            <p className="text-[11px] text-amber-600 font-medium tracking-wide">Luxury within reach</p>
           </div>
         </div>
 
-        {/* Current User Pill */}
-        <div className="px-4 py-3 bg-slate-950/60 border-b border-slate-800/60">
+        {/* User Info Bar */}
+        <div className="px-4 py-3 bg-slate-50/70 border-b border-slate-100">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-            <div className="text-xs truncate font-medium text-slate-300">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-xs"></div>
+            <div className="text-xs truncate font-semibold text-slate-800">
               {isAdmin ? (user?.full_name?.includes('Gaurav') ? 'CEO' : 'Super Admin') : user?.store_code || 'Store Employee'}
             </div>
           </div>
-          <div className="text-[11px] text-slate-400 truncate mt-0.5">
+          <div className="text-[11px] text-slate-500 truncate mt-0.5 font-normal">
             {user?.full_name || (isAdmin ? 'Central Administration' : user?.store_name)}
           </div>
         </div>
 
-        {/* Navigation Links */}
+        {/* Nav Links */}
         <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -146,11 +146,11 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                 to={item.path}
                 onClick={() => setIsOpen(false)}
                 className={({ isActive }) => `
-                  flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-colors
-                  ${item.highlight ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold shadow-xs hover:from-emerald-500 hover:to-teal-500' : ''}
+                  flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150
+                  ${item.highlight ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold shadow-xs hover:from-emerald-700 hover:to-teal-700' : ''}
                   ${!item.highlight && isActive 
-                    ? 'bg-slate-800 text-emerald-400 font-semibold border-l-2 border-emerald-500' 
-                    : !item.highlight && 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'}
+                    ? 'bg-emerald-50 text-emerald-700 font-semibold border-l-2 border-emerald-600' 
+                    : !item.highlight && 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'}
                 `}
               >
                 <Icon className={`w-4 h-4 shrink-0 ${item.highlight ? 'text-white' : ''}`} />
@@ -160,11 +160,11 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           })}
         </nav>
 
-        {/* Footer Logout */}
-        <div className="p-3 border-t border-slate-800/80">
+        {/* Bottom Actions */}
+        <div className="p-3 border-t border-slate-100 bg-slate-50/30">
           <button
             onClick={logout}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-rose-400 hover:bg-slate-800/60 transition"
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition"
           >
             <LogOut className="w-4 h-4 shrink-0" />
             <span>Sign Out</span>

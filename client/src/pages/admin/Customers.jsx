@@ -100,7 +100,7 @@ export default function Customers() {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
         <div>
           <h1 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
@@ -121,7 +121,7 @@ export default function Customers() {
         </button>
       </div>
 
-      {/* Search Bar */}
+      {}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs max-w-md">
         <div className="relative">
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -136,7 +136,7 @@ export default function Customers() {
         </div>
       </div>
 
-      {/* Customers Table */}
+      {}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         {loading ? (
           <div className="py-16 text-center text-slate-400 text-xs">Loading customer directory...</div>
@@ -197,7 +197,7 @@ export default function Customers() {
         )}
       </div>
 
-      {/* Customer Profile Modal */}
+      {}
       {selectedCustomer && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-2xl w-full p-6 text-xs space-y-4 max-h-[85vh] overflow-y-auto">
@@ -212,7 +212,7 @@ export default function Customers() {
               <button onClick={() => setSelectedCustomer(null)}><X className="w-4 h-4 text-slate-400" /></button>
             </div>
 
-            {/* Invoices List */}
+            {}
             <div>
               <span className="font-bold text-slate-700 uppercase text-[10px] block mb-2">Purchase Transactions</span>
               <div className="divide-y border rounded-xl overflow-hidden max-h-48 overflow-y-auto">
@@ -232,7 +232,7 @@ export default function Customers() {
               </div>
             </div>
 
-            {/* Devices Owned */}
+            {}
             <div>
               <span className="font-bold text-slate-700 uppercase text-[10px] block mb-2">Smartphones Purchased</span>
               <div className="divide-y border rounded-xl overflow-hidden max-h-48 overflow-y-auto">
@@ -264,7 +264,7 @@ export default function Customers() {
         </div>
       )}
 
-      {/* Add Customer Modal */}
+      {}
       {showAddModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-md w-full p-6 text-xs space-y-4">
