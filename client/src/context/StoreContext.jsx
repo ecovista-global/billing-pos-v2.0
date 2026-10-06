@@ -11,7 +11,7 @@ export function StoreProvider({ children }) {
 
   useEffect(() => {
     if (user?.role === 'admin') {
-      apiFetch('/api/stores').then(r => setStores(r.stores || []));
+      apiFetch('/stores').then(r => setStores(r.stores || [])).catch(() => {});
     } else if (user?.assigned_store_id) {
       setSelectedStoreId(user.assigned_store_id);
     }

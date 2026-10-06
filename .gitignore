@@ -30,3 +30,5 @@ Thumbs.db
 
 scratch/
 .vercel/
+.neon
+.env.local

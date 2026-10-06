@@ -13,5 +13,8 @@
     "start": "node server/src/index.js",
     "seed": "npm --prefix server run seed"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@neon/config": "^1.8.4",
+    "@neon/env": "^1.5.1"
+  }
 }
