@@ -759,6 +759,9 @@ router.post('/', authenticateToken, enforceStoreContext, async (req, res) => {
           return {
             saleId, invoiceNumber, saleNumber, grandTotal: grandTotalAll, exchangeAmount, netPayable, exchange: exchangeRecordInfo
           };
+        }, {
+          maxWait: 15000,
+          timeout: 30000
         });
         
         break; // break out of retry loop if successful
