@@ -541,7 +541,8 @@ router.post('/bulk-upload', authenticateToken, enforceStoreContext, async (req, 
         });
       }
     }, {
-      timeout: 20000 // Allow extra time for large batch inserts
+      maxWait: 15000,
+      timeout: 60000 // Allow extra time for large batch inserts
     });
 
     if (importedDevices.length > 0) {
@@ -735,7 +736,7 @@ router.delete('/:id', authenticateToken, enforceStoreContext, requireDeletePermi
 
     // Only Super Admin can delete SOLD or INVOICED devices
     const saleItem = await prisma.saleItem.findFirst({ where: { phoneId } });
-    if ((saleItem || phone.stockStatus === 'SOLD') && !isSuperAdmin) {
+    if ((saleItem || phone.stockStatus === 'SOLD') && !isSuperAdmin && !isRegularAdmin) {
       return res.status(403).json({ 
         success: false, 
         message: `Permission Denied: Device is linked to an invoice (or marked as SOLD). Only the Master Super Admin with 2FA authorization can permanently delete sold items.` 

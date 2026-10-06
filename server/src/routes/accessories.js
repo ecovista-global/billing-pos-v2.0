@@ -344,6 +344,9 @@ router.post('/bulk-upload', authenticateToken, async (req, res) => {
 
         importedAccessories.push({ id: insertRes.id, accessory_id: accessoryId, sku: finalSku, name, category, brand, selling_price_inclusive: sCalc.inclusivePrice, quantity: qty, store_id: storeId });
       }
+    }, {
+      maxWait: 15000,
+      timeout: 60000
     });
 
     await logAudit(req.user.id, req.user.username, 'BULK_UPLOAD_ACCESSORIES', fallbackStoreId, 'accessories', null, `Bulk uploaded ${importedAccessories.length} accessories (${failedRows.length} failed). All 18% GST-inclusive.`, req.ip);
@@ -445,7 +448,7 @@ router.delete('/:id', authenticateToken, requireDeletePermission('accessories'),
     if (!existing) return res.status(404).json({ success: false, message: 'Accessory not found' });
 
     const soldCount = await prisma.saleItem.count({ where: { accessoryId: existing.id } });
-    if (soldCount > 0 && req.user.role !== 'super_admin') {
+    if (soldCount > 0 && req.user.role !== 'super_admin' && req.user.role !== 'admin') {
       return res.status(403).json({
         success: false,
         message: `Permission Denied: ${soldCount} unit(s) of this accessory have already been sold in tax invoices. Only the Master Super Admin with 2FA authorization can delete sold items.`
