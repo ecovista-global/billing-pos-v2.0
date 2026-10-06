@@ -1512,12 +1512,8 @@ export default function POS() {
               {phoneItems.length > 0 && (
                 <>
                   <div className="flex justify-between text-slate-600">
-                    <span>Phones Subtotal (Base SP):</span>
+                    <span>Phones Total (Margin GST Incl.):</span>
                     <span>{formatCurrency(phoneSubtotal)}</span>
-                  </div>
-                  <div className="flex justify-between text-slate-600">
-                    <span>Phone (GST {systemTaxRate}%):</span>
-                    <span className="font-bold text-emerald-700">+{formatCurrency(phoneTax)}</span>
                   </div>
                 </>
               )}
@@ -1541,7 +1537,7 @@ export default function POS() {
 
               <div className="flex justify-between text-slate-800 font-semibold pt-1 border-t border-slate-200">
                 <span>Total Amount before Discount:</span>
-                <span>{formatCurrency(phoneSubtotal + phoneTax + accSubtotalInclusive)}</span>
+                <span>{formatCurrency(phoneSubtotal + accSubtotalInclusive)}</span>
               </div>
 
               {totalDiscount > 0 && (
