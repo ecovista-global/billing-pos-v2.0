@@ -6,15 +6,16 @@ const fs = require('fs');
 const prisma = require('./db/prisma');
 const { createBackup } = require('./utils/backup');
 
-// Start the backup system (the file itself starts the daily interval, we just require it)
-// WAL Checkpoint every 5 minutes
-setInterval(() => {
-  try {
-    prisma.$executeRawUnsafe('PRAGMA wal_checkpoint(TRUNCATE)');
-  } catch(e) {
-    console.error('WAL checkpoint error:', e);
-  }
-}, 5 * 60 * 1000);
+// WAL Checkpoint every 5 minutes (SQLite only)
+if (process.env.DATABASE_URL && process.env.DATABASE_URL.includes('file:')) {
+  setInterval(() => {
+    try {
+      prisma.$executeRawUnsafe('PRAGMA wal_checkpoint(TRUNCATE)');
+    } catch(e) {
+      console.error('WAL checkpoint error:', e);
+    }
+  }, 5 * 60 * 1000);
+}
 
 const authRoutes = require('./routes/auth');
 const storeRoutes = require('./routes/stores');
@@ -54,6 +55,15 @@ app.use(cors({
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Root landing route
+app.get('/', (req, res) => {
+  res.json({
+    status: 'online',
+    message: 'Ecofone POS API Server is Live & Running!',
+    healthCheck: '/api/health'
+  });
+});
 
 // Health Check
 app.get('/api/health', async (req, res) => {
