@@ -6,16 +6,6 @@ const fs = require('fs');
 const prisma = require('./db/prisma');
 const { createBackup } = require('./utils/backup');
 
-// WAL Checkpoint every 5 minutes (SQLite only)
-if (process.env.DATABASE_URL && process.env.DATABASE_URL.includes('file:')) {
-  setInterval(() => {
-    try {
-      prisma.$executeRawUnsafe('PRAGMA wal_checkpoint(TRUNCATE)');
-    } catch(e) {
-      console.error('WAL checkpoint error:', e);
-    }
-  }, 5 * 60 * 1000);
-}
 
 const authRoutes = require('./routes/auth');
 const storeRoutes = require('./routes/stores');
@@ -38,15 +28,13 @@ const PORT = process.env.PORT || 5000;
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
   ? process.env.ALLOWED_ORIGINS.split(',') 
-  : ['http://localhost:5173'];
+  : ['http://localhost:5173', 'http://localhost:5000', 'https://nodejs-642200819.kloudbeansite.com'];
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error(`CORS: Origin ${origin} not allowed`));
-    }
+    // Allow requests with no origin (like mobile apps or curl requests)
+    // and dynamically allow origins for now to prevent blocking the React SPA
+    callback(null, true);
   },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
