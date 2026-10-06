@@ -1042,11 +1042,7 @@ export default function POS() {
 
                           {}
                           <div className="flex items-center gap-1.5 text-[10px] mt-1">
-                            {item.item_type === 'quick_bill' || item.item_type === 'quick_bill_accessory' ? (
-                              <span className="bg-amber-100/60 text-amber-900 border border-amber-200 font-semibold px-1.5 py-0.5 rounded text-[9px]">
-                                Quick Bill (GST Auto-Adjust)
-                              </span>
-                            ) : isAccessory ? (
+                            {isAccessory ? (
                               <>
                                 <span className="bg-indigo-100/60 text-indigo-900 border border-indigo-200 font-semibold px-1.5 py-0.5 rounded text-[9px]">
                                   Taxable: {formatCurrency(item.taxable)}

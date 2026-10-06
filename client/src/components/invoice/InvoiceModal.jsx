@@ -525,9 +525,11 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
                     <p className="whitespace-pre-line leading-tight text-slate-600">
                       {typeof company.invoice_terms === 'string' ? company.invoice_terms.replace(/\\n/g, '\n') : '1. 6 Months certified hardware warranty included on phones.\n2. Warranty void if liquid/physical damage or unauthorized repair.\n3. Original tax invoice required for warranty claims.\n4. Disputes subject to store local jurisdiction.'}
                     </p>
-                    <p className="mt-1.5 p-1 bg-slate-50 border border-slate-200 rounded text-[8px] font-semibold text-slate-700 leading-snug">
-                      Declaration: This bill is issued under the Second-Hand Goods Margin Scheme (Rule 32(5) of CGST Rules). No input tax credit is available on this supply.
-                    </p>
+                    {hasPhones && (
+                      <p className="mt-1.5 p-1 bg-slate-50 border border-slate-200 rounded text-[8px] font-semibold text-slate-700 leading-snug">
+                        Declaration: This bill is issued under the Second-Hand Goods Margin Scheme (Rule 32(5) of CGST Rules). No input tax credit is available on this supply.
+                      </p>
+                    )}
                   </div>
                   <div className="text-center flex flex-col justify-end">
                     <div className="border-b border-slate-300 pb-4"></div>
