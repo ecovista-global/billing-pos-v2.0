@@ -18,11 +18,11 @@ async function generateNextPhoneProductId() {
   
   const maxSeqObj = result[0];
   let nextSeq = (maxSeqObj && maxSeqObj.max_seq !== null) ? Number(maxSeqObj.max_seq) + 1 : 1;
-  let candidate = `ECO-PH-\${String(nextSeq).padStart(5, '0')}`;
+  let candidate = `ECO-PH-${String(nextSeq).padStart(5, '0')}`;
 
   while (await prisma.phoneInventory.findFirst({ where: { internalProductId: candidate } })) {
     nextSeq++;
-    candidate = `ECO-PH-\${String(nextSeq).padStart(5, '0')}`;
+    candidate = `ECO-PH-${String(nextSeq).padStart(5, '0')}`;
   }
   return candidate;
 }
@@ -146,7 +146,7 @@ router.get('/stats', authenticateToken, enforceStoreContext, async (req, res) =>
     const params = [];
 
     if (!req.storeContext.isAllStores) {
-      whereClause = `WHERE current_store_id = \${req.storeContext.store_id}`;
+      whereClause = `WHERE current_store_id = ${req.storeContext.store_id}`;
     }
 
     const overallRaw = await prisma.$queryRawUnsafe(`
@@ -159,7 +159,7 @@ router.get('/stats', authenticateToken, enforceStoreContext, async (req, res) =>
         COALESCE(SUM(CASE WHEN stock_status = 'AVAILABLE' THEN total_cost ELSE 0 END), 0) as available_inventory_cost,
         COALESCE(SUM(CASE WHEN stock_status = 'AVAILABLE' THEN final_selling_price ELSE 0 END), 0) as available_inventory_value
       FROM phone_inventory
-      \${whereClause}
+      ${whereClause}
     `);
     const overall = { ...overallRaw[0] };
     for (const key in overall) if (typeof overall[key] === 'bigint') overall[key] = Number(overall[key]);
@@ -355,25 +355,25 @@ router.post('/', authenticateToken, enforceStoreContext, async (req, res) => {
     }
 
     const cleanImei1 = String(imei1).trim();
-    if (!/^\\d{15}$/.test(cleanImei1)) {
+    if (!/^\d{15}$/.test(cleanImei1)) {
       return res.status(400).json({ success: false, message: 'IMEI 1 must be exactly 15 numeric digits.' });
     }
 
     const cleanImei2 = imei2 && String(imei2).trim() ? String(imei2).trim() : null;
-    if (cleanImei2 && !/^\\d{15}$/.test(cleanImei2)) {
+    if (cleanImei2 && !/^\d{15}$/.test(cleanImei2)) {
       return res.status(400).json({ success: false, message: 'Secondary IMEI 2 must be exactly 15 numeric digits.' });
     }
 
     const existing1 = await prisma.phoneInventory.findFirst({
       where: { OR: [{ imei1: cleanImei1 }, { imei2: cleanImei1 }] }
     });
-    if (existing1) return res.status(400).json({ success: false, message: `IMEI \${cleanImei1} already exists in the system (Status: \${existing1.stockStatus}).` });
+    if (existing1) return res.status(400).json({ success: false, message: `IMEI ${cleanImei1} already exists in the system (Status: ${existing1.stockStatus}).` });
 
     if (cleanImei2) {
       const existing2 = await prisma.phoneInventory.findFirst({
         where: { OR: [{ imei1: cleanImei2 }, { imei2: cleanImei2 }] }
       });
-      if (existing2) return res.status(400).json({ success: false, message: `Secondary IMEI \${cleanImei2} already exists in the system.` });
+      if (existing2) return res.status(400).json({ success: false, message: `Secondary IMEI ${cleanImei2} already exists in the system.` });
     }
 
     const pCost = parseFloat(purchase_price || 0);
@@ -469,7 +469,7 @@ router.post('/bulk-upload', authenticateToken, enforceStoreContext, async (req, 
 
         if (!brand) { failedRows.push({ row: rowNum, imei: rawImei1 || 'N/A', reason: 'Missing required Brand' }); continue; }
         if (!model) { failedRows.push({ row: rowNum, imei: rawImei1 || 'N/A', reason: 'Missing required Model' }); continue; }
-        if (!rawImei1 || !/^\\d{15}$/.test(rawImei1)) { failedRows.push({ row: rowNum, imei: rawImei1 || 'N/A', reason: 'IMEI 1 must be exactly 15 numeric digits' }); continue; }
+        if (!rawImei1 || !/^\d{15}$/.test(rawImei1)) { failedRows.push({ row: rowNum, imei: rawImei1 || 'N/A', reason: 'IMEI 1 must be exactly 15 numeric digits' }); continue; }
         if (isNaN(sellingPrice) || sellingPrice <= 0) { failedRows.push({ row: rowNum, imei: rawImei1, reason: 'Invalid or missing Selling Price' }); continue; }
 
         const imei1Upper = rawImei1.toUpperCase();
@@ -477,7 +477,7 @@ router.post('/bulk-upload', authenticateToken, enforceStoreContext, async (req, 
         if (existingImeiSet.has(imei1Upper)) { failedRows.push({ row: rowNum, imei: rawImei1, reason: 'IMEI 1 already exists in inventory database' }); continue; }
 
         if (rawImei2) {
-          if (!/^\\d{15}$/.test(rawImei2)) { failedRows.push({ row: rowNum, imei: rawImei2, reason: 'Secondary IMEI 2 must be exactly 15 numeric digits' }); continue; }
+          if (!/^\d{15}$/.test(rawImei2)) { failedRows.push({ row: rowNum, imei: rawImei2, reason: 'Secondary IMEI 2 must be exactly 15 numeric digits' }); continue; }
           const imei2Upper = rawImei2.toUpperCase();
           if (seenInBatch.has(imei2Upper) || existingImeiSet.has(imei2Upper)) { failedRows.push({ row: rowNum, imei: rawImei2, reason: 'Secondary IMEI 2 already exists' }); continue; }
           seenInBatch.add(imei2Upper);
@@ -521,7 +521,7 @@ router.post('/bulk-upload', authenticateToken, enforceStoreContext, async (req, 
         const taxAmount = Math.round((difference * (tRate / 100)) * 100) / 100;
         const finalPrice = Math.max(0, (sellingPrice + taxAmount) - disc);
         
-        let internalId = `ECO-PH-\${String(nextSeq++).padStart(5, '0')}`;
+        let internalId = `ECO-PH-${String(nextSeq++).padStart(5, '0')}`;
         
         const info = await tx.phoneInventory.create({
           data: {
@@ -601,21 +601,21 @@ router.put('/:id', authenticateToken, enforceStoreContext, async (req, res) => {
     }
 
     const cleanImei1 = String(imei1).trim();
-    if (!/^\\d{15}$/.test(cleanImei1)) return res.status(400).json({ success: false, message: 'IMEI 1 must be exactly 15 numeric digits.' });
+    if (!/^\d{15}$/.test(cleanImei1)) return res.status(400).json({ success: false, message: 'IMEI 1 must be exactly 15 numeric digits.' });
 
     const cleanImei2 = imei2 && String(imei2).trim() ? String(imei2).trim() : null;
-    if (cleanImei2 && !/^\\d{15}$/.test(cleanImei2)) return res.status(400).json({ success: false, message: 'Secondary IMEI 2 must be exactly 15 numeric digits.' });
+    if (cleanImei2 && !/^\d{15}$/.test(cleanImei2)) return res.status(400).json({ success: false, message: 'Secondary IMEI 2 must be exactly 15 numeric digits.' });
 
     const dupImei1 = await prisma.phoneInventory.findFirst({
       where: { OR: [{ imei1: cleanImei1 }, { imei2: cleanImei1 }], NOT: { id: phoneId } }
     });
-    if (dupImei1) return res.status(400).json({ success: false, message: `IMEI \${cleanImei1} is already registered on another device (ID #\${dupImei1.id}, Status: \${dupImei1.stockStatus}).` });
+    if (dupImei1) return res.status(400).json({ success: false, message: `IMEI ${cleanImei1} is already registered on another device (ID #${dupImei1.id}, Status: ${dupImei1.stockStatus}).` });
 
     if (cleanImei2) {
       const dupImei2 = await prisma.phoneInventory.findFirst({
         where: { OR: [{ imei1: cleanImei2 }, { imei2: cleanImei2 }], NOT: { id: phoneId } }
       });
-      if (dupImei2) return res.status(400).json({ success: false, message: `Secondary IMEI \${cleanImei2} is already registered on another device.` });
+      if (dupImei2) return res.status(400).json({ success: false, message: `Secondary IMEI ${cleanImei2} is already registered on another device.` });
     }
 
     const pCost = parseFloat(purchase_price !== undefined ? purchase_price : existing.purchasePrice);
@@ -633,17 +633,80 @@ router.put('/:id', authenticateToken, enforceStoreContext, async (req, res) => {
     const finalPrice = Math.max(0, (sPrice + taxAmount) - disc);
 
     const targetStoreId = (req.user.role === 'admin' && current_store_id) ? parseInt(current_store_id) : (existing.currentStoreId || req.user.assigned_store_id);
-    const updatedStatus = stock_status || existing.stockStatus || 'AVAILABLE';
+    let updatedStatus = stock_status || existing.stockStatus || 'AVAILABLE';
 
-    await prisma.phoneInventory.update({
-      where: { id: phoneId },
-      data: {
-        brand: brand.trim(), model: model.trim(), variant: variant || '', ram: ram || '', storage: storage || '', color: color || '',
-        imei1: cleanImei1, imei2: cleanImei2, serialNumber: serial_number || '', conditionGrade: condition_grade || 'Grade A', batteryHealth: battery_health || '90%',
-        purchasePrice: pCost, refurbishmentCost: rCost, additionalCost: aCost, totalCost,
-        sellingPrice: sPrice, discount: disc, taxRate: tRate, finalSellingPrice: finalPrice,
-        supplierId: supplier_id ? parseInt(supplier_id) : null, purchaseDate: purchase_date ? new Date(purchase_date) : null, warrantyPeriodMonths: parseInt(warranty_period_months || 6),
-        currentStoreId: targetStoreId, stockStatus: updatedStatus, notes: notes || ''
+    await prisma.$transaction(async (tx) => {
+      // Auto-transition QUICK_BILLED to SOLD if cost is updated
+      let costUpdated = false;
+      if (existing.stockStatus === 'QUICK_BILLED') {
+        if (totalCost > 0) {
+          updatedStatus = 'SOLD';
+          costUpdated = true;
+        } else {
+          updatedStatus = 'QUICK_BILLED';
+        }
+      }
+
+      await tx.phoneInventory.update({
+        where: { id: phoneId },
+        data: {
+          brand: brand.trim(), model: model.trim(), variant: variant || '', ram: ram || '', storage: storage || '', color: color || '',
+          imei1: cleanImei1, imei2: cleanImei2, serialNumber: serial_number || '', conditionGrade: condition_grade || 'Grade A', batteryHealth: battery_health || '90%',
+          purchasePrice: pCost, refurbishmentCost: rCost, additionalCost: aCost, totalCost,
+          sellingPrice: sPrice, discount: disc, taxRate: tRate, finalSellingPrice: finalPrice,
+          supplierId: supplier_id ? parseInt(supplier_id) : null, purchaseDate: purchase_date ? new Date(purchase_date) : null, warrantyPeriodMonths: parseInt(warranty_period_months || 6),
+          currentStoreId: targetStoreId, stockStatus: updatedStatus, notes: notes || ''
+        }
+      });
+
+      if (costUpdated) {
+        // Find the sale item linked to this phone (Quick Billed)
+        const saleItem = await tx.saleItem.findFirst({
+          where: { phoneId: phoneId },
+          include: { sale: true }
+        });
+
+        if (saleItem) {
+          const itemSPrice = parseFloat(saleItem.sellingPrice);
+          const itemTRate = parseFloat(saleItem.taxRate);
+          
+          // Using Margin Scheme logic for Quick Bill phones
+          const inclusiveDifference = Math.max(0, itemSPrice - totalCost);
+          const taxableMargin = inclusiveDifference / (1 + (itemTRate / 100));
+          const newTaxAmount = Math.round((taxableMargin * (itemTRate / 100)) * 100) / 100;
+          const newTaxableAmount = Math.round(taxableMargin * 100) / 100;
+          
+          const isInterState = saleItem.igst > 0;
+          let newCgst = 0, newSgst = 0, newIgst = 0;
+          if (isInterState) newIgst = newTaxAmount;
+          else {
+            newCgst = Math.round((newTaxAmount / 2) * 100) / 100;
+            newSgst = Math.round((newTaxAmount - newCgst) * 100) / 100;
+          }
+
+          const oldTaxAmount = parseFloat(saleItem.totalTax);
+          const oldTaxableAmount = parseFloat(saleItem.taxableAmount);
+
+          await tx.saleItem.update({
+            where: { id: saleItem.id },
+            data: {
+              unitCost: totalCost,
+              taxableAmount: newTaxableAmount,
+              totalTax: newTaxAmount,
+              cgst: newCgst,
+              sgst: newSgst,
+              igst: newIgst
+            }
+          });
+
+          await tx.sale.update({
+            where: { id: saleItem.saleId },
+            data: {
+              totalTax: { increment: newTaxAmount - oldTaxAmount },
+              taxableAmount: { increment: newTaxableAmount - oldTaxableAmount }
+            }
+          });
+        }
       }
     });
 

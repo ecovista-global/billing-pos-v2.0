@@ -32,7 +32,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col justify-center items-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4 relative overflow-hidden">
       
       {}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -42,7 +42,7 @@ export default function Login() {
         
         {}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-white rounded-3xl p-2 mx-auto shadow-2xl flex items-center justify-center border-2 border-emerald-500/20 mb-3">
+          <div className="w-20 h-20 bg-white rounded-3xl p-2 mx-auto shadow-lg flex items-center justify-center border-2 border-emerald-500/20 mb-3">
             <img 
               src="/logo.png" 
               alt="Ecofone" 
@@ -50,13 +50,13 @@ export default function Login() {
               onError={(e) => { e.target.src = 'https://placehold.co/120x120?text=EcoFone'; }}
             />
           </div>
-          <h1 className="text-2xl font-black text-white tracking-tight">EcoFone</h1>
-          <p className="text-sm font-semibold text-amber-400 mt-0.5">Luxury within reach</p>
-          <p className="text-xs text-slate-400 mt-1">Multi-Store POS & Business Management System</p>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">EcoFone</h1>
+          <p className="text-sm font-semibold text-amber-600 mt-0.5">Luxury within reach</p>
+          <p className="text-xs text-slate-600 mt-1">Multi-Store POS & Business Management System</p>
         </div>
 
         {}
-        <div className="bg-white/95 backdrop-blur-md rounded-2xl p-6 sm:p-8 shadow-2xl border border-white/20">
+        <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-xl border border-slate-100">
           <div className="mb-6">
             <h2 className="text-lg font-bold text-slate-900">Sign in to your account</h2>
             <p className="text-xs text-slate-500 mt-0.5">Enter your employee ID or credentials to continue</p>

@@ -7,18 +7,19 @@ export default function QuickBillModal({ onClose, onAdd, systemTaxRate }) {
   const [itemType, setItemType] = useState('phone'); // 'phone' | 'accessory'
   const [form, setForm] = useState({
     brand: 'Samsung',
+    customBrand: '',
     model: '',
     variant: '',
     imei1: '',
     condition_grade: 'Grade A',
-    selling_price: '',
-    tax_rate: systemTaxRate || 5.0
+    selling_price: ''
   });
   const [error, setError] = useState('');
 
   const handleAdd = () => {
     setError('');
-    if (!form.brand.trim() || !form.model.trim()) {
+    const finalBrand = form.brand === 'Other' ? form.customBrand : form.brand;
+    if (!finalBrand.trim() || !form.model.trim()) {
       setError('Brand and Model are required.');
       return;
     }
@@ -36,13 +37,14 @@ export default function QuickBillModal({ onClose, onAdd, systemTaxRate }) {
 
     onAdd({
       ...form,
+      brand: finalBrand,
       item_type: itemType === 'phone' ? 'quick_bill' : 'quick_bill_accessory',
       id: `QB-${Date.now()}`, // local cart key
       selling_price: sp,
       purchase_price: 0,
-      tax_rate: parseFloat(form.tax_rate) || systemTaxRate,
+      tax_rate: itemType === 'phone' ? 5.0 : 18.0,
       quantity: 1,
-      price_includes_gst: 0,
+      price_includes_gst: 1,
       discount: 0,
       discount_mode: 'fixed',
       discount_value: ''
@@ -72,13 +74,13 @@ export default function QuickBillModal({ onClose, onAdd, systemTaxRate }) {
         {/* Type Toggle */}
         <div className="flex border-b border-slate-100">
           <button
-            onClick={() => { setItemType('phone'); setForm({ ...form, tax_rate: systemTaxRate || 5.0 }); }}
+            onClick={() => { setItemType('phone'); }}
             className={`flex-1 py-3 text-xs font-bold transition ${itemType === 'phone' ? 'text-amber-600 border-b-2 border-amber-500' : 'text-slate-500 hover:bg-slate-50'}`}
           >
             Mobile Phone
           </button>
           <button
-            onClick={() => { setItemType('accessory'); setForm({ ...form, tax_rate: 18.0 }); }}
+            onClick={() => { setItemType('accessory'); }}
             className={`flex-1 py-3 text-xs font-bold transition ${itemType === 'accessory' ? 'text-amber-600 border-b-2 border-amber-500' : 'text-slate-500 hover:bg-slate-50'}`}
           >
             Accessory
@@ -109,13 +111,24 @@ export default function QuickBillModal({ onClose, onAdd, systemTaxRate }) {
                   className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-400 outline-none"
                 />
               ) : (
-                <select
-                  value={form.brand}
-                  onChange={e => setForm({ ...form, brand: e.target.value })}
-                  className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-400 outline-none"
-                >
-                  {BRANDS.map(b => <option key={b}>{b}</option>)}
-                </select>
+                <div className="space-y-2">
+                  <select
+                    value={form.brand}
+                    onChange={e => setForm({ ...form, brand: e.target.value })}
+                    className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-400 outline-none"
+                  >
+                    {BRANDS.map(b => <option key={b}>{b}</option>)}
+                  </select>
+                  {form.brand === 'Other' && (
+                    <input
+                      type="text"
+                      placeholder="Enter brand name"
+                      value={form.customBrand}
+                      onChange={e => setForm({ ...form, customBrand: e.target.value })}
+                      className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-400 outline-none"
+                    />
+                  )}
+                </div>
               )}
             </div>
 
@@ -178,35 +191,18 @@ export default function QuickBillModal({ onClose, onAdd, systemTaxRate }) {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
-            {/* Selling Price */}
-            <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1">
-                {itemType === 'accessory' ? 'Selling Price (Incl. GST) (₹) *' : 'Selling Price (₹) *'}
-              </label>
-              <input
-                type="number"
-                min="1"
-                placeholder="e.g. 25000"
-                value={form.selling_price}
-                onChange={e => setForm({ ...form, selling_price: e.target.value })}
-                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-400 outline-none font-mono"
-              />
-            </div>
-
-            {/* Tax Rate */}
-            <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1">GST Rate (%)</label>
-              <input
-                type="number"
-                min="0"
-                max="28"
-                step="0.5"
-                value={form.tax_rate}
-                onChange={e => setForm({ ...form, tax_rate: parseFloat(e.target.value) || 0 })}
-                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-400 outline-none font-mono"
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-600 mb-1">
+              Selling Price (Incl. GST) (₹) *
+            </label>
+            <input
+              type="number"
+              min="1"
+              placeholder="e.g. 25000"
+              value={form.selling_price}
+              onChange={e => setForm({ ...form, selling_price: e.target.value })}
+              className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-400 outline-none font-mono"
+            />
           </div>
 
           {error && (

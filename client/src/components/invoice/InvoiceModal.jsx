@@ -117,6 +117,7 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
               <div className="text-slate-900 font-mono text-[11px] leading-relaxed">
                 <div className="text-center pb-2 border-b border-dashed border-slate-400">
                   <div className="font-extrabold text-sm tracking-wider uppercase">{company.company_name || 'ECOFONE'}</div>
+                  <div className="text-[8px] font-bold text-slate-700 leading-tight mt-0.5 mb-0.5">(A unit of Ecovista Global Private Limited)</div>
                   <div className="text-[10px] text-slate-600">{company.company_tagline || 'Luxury within reach'}</div>
                   <div className="text-[10px] font-semibold mt-1">{sale?.store_name}</div>
                   <div className="text-[9px] text-slate-500">{sale?.store_address}, {sale?.store_city}</div>
@@ -144,6 +145,12 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
                     <span>PHONE:</span>
                     <span>{sale?.customer_phone}</span>
                   </div>
+                  {sale?.customer_gstin && (
+                    <div className="flex justify-between">
+                      <span>GSTIN:</span>
+                      <span className="font-bold">{sale?.customer_gstin}</span>
+                    </div>
+                  )}
                 </div>
 
                 {}
@@ -192,12 +199,6 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
                     <span>Subtotal:</span>
                     <span>{formatCurrency(sale?.subtotal)}</span>
                   </div>
-                  {phoneTax > 0 && (
-                    <div className="flex justify-between text-[9px] text-emerald-700">
-                      <span>Phone (GST 5%) :</span>
-                      <span>+{formatCurrency(phoneTax)}</span>
-                    </div>
-                  )}
                   {accessoryTaxable > 0 && (
                     <div className="flex justify-between text-[9px] text-slate-600">
                       <span>Accessory Taxable Val:</span>
@@ -206,14 +207,8 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
                   )}
                   {accessoryTax > 0 && (
                     <div className="flex justify-between text-[9px] text-emerald-700">
-                      <span>GST (18% Incl. in Acc):</span>
+                      <span>GST (18% on Accessories):</span>
                       <span>{formatCurrency(accessoryTax)}</span>
-                    </div>
-                  )}
-                  {sale?.total_tax > 0 && (
-                    <div className="flex justify-between text-[9px] text-slate-700 font-semibold pt-0.5 border-t border-dotted border-slate-300">
-                      <span>Total GST:</span>
-                      <span>+{formatCurrency(sale?.total_tax)}</span>
                     </div>
                   )}
                   {sale?.discount_total > 0 && (
@@ -255,9 +250,9 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
                   ) : (
                     <p className="font-bold text-slate-800">BRAND NEW 100% GENUINE ACCESSORIES</p>
                   )}
-                  <p className="text-[8px] text-slate-500">
+                  <p className="text-[7.5px] text-slate-500 font-medium leading-tight">
                     {hasAccessories && 'Acc. prices include 18% GST. '}
-                    {hasPhones && 'Phones taxed under Rule 32(5) Margin Scheme.'}
+                    {hasPhones && 'Refurbished phones billed under Rule 32(5) CGST Margin Scheme. No Input Tax Credit available.'}
                   </p>
                   <p className="pt-0.5 font-semibold text-slate-800">Thank you for visiting Ecofone!</p>
                   <p className="text-[10px] font-bold">www.ecofone.in</p>
@@ -277,6 +272,9 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
                       <h1 className="text-lg print:text-base font-black tracking-tight text-slate-900 leading-tight">
                         {company.company_name || 'Ecofone'}
                       </h1>
+                      <div className="text-[9.5px] print:text-[8.5px] font-bold text-slate-700 leading-none mt-1 mb-1">
+                        (A unit of Ecovista Global Private Limited)
+                      </div>
                       <p className="text-[11px] print:text-[10px] font-bold text-amber-600">
                         {company.company_tagline || 'Luxury within reach'}
                       </p>
@@ -316,6 +314,7 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
                     <span className="text-slate-700 block mt-0.5">Phone: <strong>{sale?.customer_phone}</strong></span>
                     {sale?.customer_email && <span className="text-slate-600 block text-[10px]">Email: {sale.customer_email}</span>}
                     {sale?.customer_address && <span className="text-slate-600 block text-[10px]">Address: {sale.customer_address}</span>}
+                    {sale?.customer_gstin && <span className="text-slate-800 font-bold block text-[10px] mt-0.5">GSTIN: {sale.customer_gstin}</span>}
                   </div>
                   <div className="text-right">
                     <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-500 block">Payment Details:</span>
@@ -415,10 +414,16 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
                               )}
                             </td>
                             <td className="py-1.5 px-1.5 text-right text-slate-600 text-xs">
-                              <div className="font-semibold text-emerald-800">+{formatCurrency(item.total_tax)}</div>
-                              <div className="text-[7.5px] text-slate-400">
-                                {isAccessory ? '(18% Incl.)' : `(${item.tax_rate || 5}%)`}
-                              </div>
+                              {isAccessory ? (
+                                <>
+                                  <div className="font-semibold text-emerald-800">{formatCurrency(item.total_tax)}</div>
+                                  <div className="text-[7.5px] text-slate-400">(18% Incl.)</div>
+                                </>
+                              ) : (
+                                <div className="text-[8.5px] font-bold text-slate-400 uppercase tracking-wide">
+                                  Incl.<br/>(Margin)
+                                </div>
+                              )}
                             </td>
                             <td className="py-1.5 px-1.5 text-right font-bold text-slate-900 text-xs">
                               {formatCurrency(item.final_price)}
@@ -471,15 +476,9 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
 
                   <div className="space-y-0.5 text-[11px] sm:ml-auto w-full sm:max-w-xs">
                     <div className="flex justify-between text-slate-600">
-                      <span>Subtotal (Items):</span>
+                      <span>Subtotal (Inclusive of Taxes):</span>
                       <span className="font-medium">{formatCurrency(sale?.subtotal)}</span>
                     </div>
-                    {phoneTax > 0 && (
-                      <div className="flex justify-between text-slate-600 text-[10px]">
-                        <span>Phone (GST 5%) :</span>
-                        <span className="font-semibold text-emerald-800">+{formatCurrency(phoneTax)}</span>
-                      </div>
-                    )}
                     {accessoryTaxable > 0 && (
                       <div className="flex justify-between text-slate-700 font-medium">
                         <span>Taxable Value (Accessories):</span>
@@ -489,17 +488,9 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
                     {accessoryTax > 0 && (
                       <div className="flex justify-between text-slate-600 text-[10px]">
                         <span>Accessory GST (18% Inclusive):</span>
-                        <span className="font-semibold text-emerald-800">+{formatCurrency(accessoryTax)}</span>
+                        <span className="font-semibold text-emerald-800">{formatCurrency(accessoryTax)}</span>
                       </div>
                     )}
-                    <div className="flex justify-between text-slate-700 pt-0.5 border-t border-slate-200">
-                      <span>Total GST:</span>
-                      <span className="font-bold text-emerald-800">+{formatCurrency(sale?.total_tax)}</span>
-                    </div>
-                    <div className="flex justify-between text-slate-800 font-semibold">
-                      <span>Total (Items + GST):</span>
-                      <span>{formatCurrency((sale?.subtotal || 0) + (sale?.total_tax || 0))}</span>
-                    </div>
                     {sale?.discount_total > 0 && (
                       <div className="flex justify-between text-rose-600 font-medium">
                         <span>Discount (Applied on Total):</span>
@@ -532,13 +523,16 @@ export default function InvoiceModal({ invoiceData, onClose, onNewSale }) {
                   <div className="col-span-2">
                     <span className="font-bold text-slate-700 uppercase tracking-wider block mb-0.5">Terms & Conditions:</span>
                     <p className="whitespace-pre-line leading-tight text-slate-600">
-                      {company.invoice_terms || '1. 6 Months certified hardware warranty included on phones.\n2. Warranty void if liquid/physical damage or unauthorized repair.\n3. Original tax invoice required for warranty claims.\n4. Disputes subject to store local jurisdiction.'}
+                      {typeof company.invoice_terms === 'string' ? company.invoice_terms.replace(/\\n/g, '\n') : '1. 6 Months certified hardware warranty included on phones.\n2. Warranty void if liquid/physical damage or unauthorized repair.\n3. Original tax invoice required for warranty claims.\n4. Disputes subject to store local jurisdiction.'}
+                    </p>
+                    <p className="mt-1.5 p-1 bg-slate-50 border border-slate-200 rounded text-[8px] font-semibold text-slate-700 leading-snug">
+                      Declaration: This bill is issued under the Second-Hand Goods Margin Scheme (Rule 32(5) of CGST Rules). No input tax credit is available on this supply.
                     </p>
                   </div>
                   <div className="text-center flex flex-col justify-end">
                     <div className="border-b border-slate-300 pb-4"></div>
                     <span className="font-bold text-slate-800 uppercase tracking-wider mt-0.5 block text-[9px]">Authorized Signatory</span>
-                    <span className="text-slate-500 text-[8px]">{company.company_name || 'Ecofone India Pvt Ltd'}</span>
+                    <span className="text-slate-500 text-[8px]">{company.company_name || 'Ecovista Global Private Limited'}</span>
                   </div>
                 </div>
 

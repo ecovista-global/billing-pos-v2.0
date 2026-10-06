@@ -19,7 +19,7 @@ async function getNextAccessoryId() {
       if (!isNaN(parsed)) nextSeq = parsed + 1;
     }
   }
-  return `ACC-\${String(nextSeq).padStart(5, '0')}`;
+  return `ACC-${String(nextSeq).padStart(5, '0')}`;
 }
 
 // GET /api/accessories (List accessories with filters)
@@ -175,11 +175,11 @@ router.post('/', authenticateToken, async (req, res) => {
     const sCalc = calculateInclusiveGst(sInclusive, 18.0);
 
     const accessoryId = await getNextAccessoryId();
-    const generatedSku = sku && sku.trim() ? sku.trim().toUpperCase() : `SKU-\${category.substring(0, 3).toUpperCase()}-\${Date.now().toString().slice(-6)}`;
+    const generatedSku = sku && sku.trim() ? sku.trim().toUpperCase() : `SKU-${category.substring(0, 3).toUpperCase()}-${Date.now().toString().slice(-6)}`;
     const cleanBarcode = barcode && barcode.trim() ? barcode.trim() : null;
 
     const existingSku = await prisma.accessory.findFirst({ where: { sku: generatedSku } });
-    if (existingSku) return res.status(400).json({ success: false, message: `An accessory with SKU "\${generatedSku}" already exists.` });
+    if (existingSku) return res.status(400).json({ success: false, message: `An accessory with SKU "${generatedSku}" already exists.` });
 
     const qty = Math.max(0, parseInt(quantity, 10) || 0);
     let status = 'In Stock';
@@ -211,7 +211,7 @@ router.post('/', authenticateToken, async (req, res) => {
         const batch = calculateAccessoryPurchaseBatch(qty, pInclusive, 18.0);
         await tx.accessoryPurchase.create({
           data: {
-            purchaseOrderNo: `PO-INIT-\${Date.now().toString().slice(-6)}`, supplierId: targetSupplierId,
+            purchaseOrderNo: `PO-INIT-${Date.now().toString().slice(-6)}`, supplierId: targetSupplierId,
             supplierName: supplier_name || 'Initial Stock Entry', accessoryId: newAcc.id, quantity: qty,
             purchasePriceInclusive: batch.unit_purchase_price_inclusive, taxableValuePerUnit: batch.unit_taxable_value,
             gstPerUnit: batch.unit_gst, totalPurchaseValue: batch.total_purchase_value, totalTaxableValue: batch.total_taxable_value,
@@ -222,7 +222,7 @@ router.post('/', authenticateToken, async (req, res) => {
       return newAcc;
     });
 
-    await logAudit(req.user.id, req.user.username, 'CREATE_ACCESSORY', targetStoreId, 'accessories', String(result.id), `Created accessory \${result.name} (\${result.sku}) - Price: ₹\${result.sellingPriceInclusive} (18% GST Included)`, req.ip);
+    await logAudit(req.user.id, req.user.username, 'CREATE_ACCESSORY', targetStoreId, 'accessories', String(result.id), `Created accessory ${result.name} (${result.sku}) - Price: ₹${result.sellingPriceInclusive} (18% GST Included)`, req.ip);
 
     res.status(201).json({ success: true, message: 'Accessory added successfully (18% GST Inclusive)', accessory: result });
   } catch (error) {
@@ -267,7 +267,7 @@ router.post('/bulk-upload', authenticateToken, async (req, res) => {
         const variant = item.variant ? String(item.variant).trim() : '';
         const description = item.description ? String(item.description).trim() : '';
 
-        if (!name) { failedRows.push({ row: rowNum, item: name || `Row \${rowNum}`, error: 'Missing product name' }); continue; }
+        if (!name) { failedRows.push({ row: rowNum, item: name || `Row ${rowNum}`, error: 'Missing product name' }); continue; }
 
         const parsePrice = (v) => {
           if (v === null || v === undefined || v === '') return 0;
@@ -296,17 +296,17 @@ router.post('/bulk-upload', authenticateToken, async (req, res) => {
         if (!finalSku) {
           const brandCode = brand.replace(/[^A-Za-z0-9]/g, '').slice(0, 3).toUpperCase() || 'ECO';
           const catCode = category.replace(/[^A-Za-z0-9]/g, '').slice(0, 3).toUpperCase() || 'ACC';
-          finalSku = `\${brandCode}-\${catCode}-\${String(nextSeq).padStart(4, '0')}`;
+          finalSku = `${brandCode}-${catCode}-${String(nextSeq).padStart(4, '0')}`;
         }
 
         let skuCandidate = finalSku;
         let counter = 1;
-        while (existingSkuSet.has(skuCandidate)) { skuCandidate = `\${finalSku}-\${counter}`; counter++; }
+        while (existingSkuSet.has(skuCandidate)) { skuCandidate = `${finalSku}-${counter}`; counter++; }
         finalSku = skuCandidate;
         existingSkuSet.add(finalSku);
 
         const barcode = item.barcode ? String(item.barcode).trim() : null;
-        const accessoryId = `ACC-\${String(nextSeq).padStart(5, '0')}`;
+        const accessoryId = `ACC-${String(nextSeq).padStart(5, '0')}`;
         nextSeq++;
 
         const qty = Math.max(0, parseInt(item.quantity, 10) || 10);
@@ -333,7 +333,7 @@ router.post('/bulk-upload', authenticateToken, async (req, res) => {
           const batch = calculateAccessoryPurchaseBatch(qty, pInclusive, 18.0);
           await tx.accessoryPurchase.create({
             data: {
-              purchaseOrderNo: `PO-BULK-\${Date.now().toString().slice(-6)}-\${idx + 1}`, supplierId: null,
+              purchaseOrderNo: `PO-BULK-${Date.now().toString().slice(-6)}-${idx + 1}`, supplierId: null,
               supplierName: supplierName, accessoryId: insertRes.id, quantity: qty,
               purchasePriceInclusive: batch.unit_purchase_price_inclusive, taxableValuePerUnit: batch.unit_taxable_value,
               gstPerUnit: batch.unit_gst, totalPurchaseValue: batch.total_purchase_value, totalTaxableValue: batch.total_taxable_value,
@@ -346,9 +346,9 @@ router.post('/bulk-upload', authenticateToken, async (req, res) => {
       }
     });
 
-    await logAudit(req.user.id, req.user.username, 'BULK_UPLOAD_ACCESSORIES', fallbackStoreId, 'accessories', null, `Bulk uploaded \${importedAccessories.length} accessories (\${failedRows.length} failed). All 18% GST-inclusive.`, req.ip);
+    await logAudit(req.user.id, req.user.username, 'BULK_UPLOAD_ACCESSORIES', fallbackStoreId, 'accessories', null, `Bulk uploaded ${importedAccessories.length} accessories (${failedRows.length} failed). All 18% GST-inclusive.`, req.ip);
 
-    res.json({ success: true, message: `Successfully imported \${importedAccessories.length} accessories.`, importedCount: importedAccessories.length, failedCount: failedRows.length, imported: importedAccessories, failed: failedRows });
+    res.json({ success: true, message: `Successfully imported ${importedAccessories.length} accessories.`, importedCount: importedAccessories.length, failedCount: failedRows.length, imported: importedAccessories, failed: failedRows });
   } catch (error) {
     console.error('Bulk upload transaction failed:', error);
     res.status(500).json({ success: false, message: 'Database transaction error during bulk upload: ' + error.message });
@@ -428,7 +428,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
       }
     });
 
-    await logAudit(req.user.id, req.user.username, 'UPDATE_ACCESSORY', updated.storeId, 'accessories', String(existing.id), `Updated accessory \${updated.name} (\${updated.sku}) - Qty: \${updated.quantity}`, req.ip);
+    await logAudit(req.user.id, req.user.username, 'UPDATE_ACCESSORY', updated.storeId, 'accessories', String(existing.id), `Updated accessory ${updated.name} (${updated.sku}) - Qty: ${updated.quantity}`, req.ip);
 
     res.json({ success: true, message: 'Accessory updated successfully', accessory: updated });
   } catch (error) {
@@ -481,7 +481,7 @@ router.post('/purchase', authenticateToken, async (req, res) => {
 
     const pInclusive = purchase_price_inclusive !== undefined ? Math.max(0, parseFloat(purchase_price_inclusive) || 0) : accessory.purchasePriceInclusive;
     const batch = calculateAccessoryPurchaseBatch(qty, pInclusive, 18.0);
-    const poNumber = purchase_order_no && purchase_order_no.trim() ? purchase_order_no.trim() : `PO-ACC-\${Date.now().toString().slice(-6)}`;
+    const poNumber = purchase_order_no && purchase_order_no.trim() ? purchase_order_no.trim() : `PO-ACC-${Date.now().toString().slice(-6)}`;
 
     const { newQty, newStatus } = await prisma.$transaction(async (tx) => {
       await tx.accessoryPurchase.create({
@@ -507,10 +507,10 @@ router.post('/purchase', authenticateToken, async (req, res) => {
       return { newQty: nextQty, newStatus: nextStatus };
     });
 
-    await logAudit(req.user.id, req.user.username, 'RESTOCK_ACCESSORY', accessory.storeId, 'accessories', String(accessory.id), `Restocked \${qty} units of \${accessory.name} at ₹\${pInclusive} (Incl. GST) each. Total Value: ₹\${batch.total_purchase_value} (Taxable: ₹\${batch.total_taxable_value}, GST: ₹\${batch.total_gst})`, req.ip);
+    await logAudit(req.user.id, req.user.username, 'RESTOCK_ACCESSORY', accessory.storeId, 'accessories', String(accessory.id), `Restocked ${qty} units of ${accessory.name} at ₹${pInclusive} (Incl. GST) each. Total Value: ₹${batch.total_purchase_value} (Taxable: ₹${batch.total_taxable_value}, GST: ₹${batch.total_gst})`, req.ip);
 
     res.status(201).json({
-      success: true, message: `Restocked \${qty} units successfully. New stock: \${newQty}`,
+      success: true, message: `Restocked ${qty} units successfully. New stock: ${newQty}`,
       batchSummary: { accessoryName: accessory.name, quantityAdded: batch.quantity, unitPurchasePriceInclusive: batch.unit_purchase_price_inclusive, unitTaxableValue: batch.unit_taxable_value, unitGst: batch.unit_gst, totalPurchaseValue: batch.total_purchase_value, totalTaxableValue: batch.total_taxable_value, totalGst: batch.total_gst, newTotalStock: newQty, status: newStatus }
     });
   } catch (error) {
@@ -527,7 +527,7 @@ router.get('/reports/valuation', authenticateToken, async (req, res) => {
     if (req.user.role !== 'admin') targetStore = req.user.assigned_store_id;
     else if (store_id) targetStore = parseInt(store_id);
 
-    let queryCondition = targetStore ? `AND a.store_id = \${targetStore}` : '';
+    let queryCondition = targetStore ? `AND a.store_id = ${targetStore}` : '';
 
     const totalsRaw = await prisma.$queryRawUnsafe(`
       SELECT 
@@ -537,7 +537,7 @@ router.get('/reports/valuation', authenticateToken, async (req, res) => {
         COALESCE(SUM(a.quantity * a.purchase_taxable_value), 0) as total_inventory_cost_taxable,
         COALESCE(SUM(a.quantity * a.purchase_gst), 0) as total_inventory_purchase_gst,
         COALESCE(SUM(a.quantity * a.selling_price_inclusive), 0) as total_retail_value_inclusive
-      FROM accessories a WHERE 1=1 \${queryCondition}
+      FROM accessories a WHERE 1=1 ${queryCondition}
     `);
 
     const categoryBreakdownRaw = await prisma.$queryRawUnsafe(`
@@ -546,7 +546,7 @@ router.get('/reports/valuation', authenticateToken, async (req, res) => {
         SUM(a.quantity * a.purchase_price_inclusive) as cost_inclusive,
         SUM(a.quantity * a.purchase_taxable_value) as cost_taxable,
         SUM(a.quantity * a.selling_price_inclusive) as retail_value_inclusive
-      FROM accessories a WHERE 1=1 \${queryCondition} GROUP BY a.category ORDER BY retail_value_inclusive DESC
+      FROM accessories a WHERE 1=1 ${queryCondition} GROUP BY a.category ORDER BY retail_value_inclusive DESC
     `);
 
     const totals = { ...totalsRaw[0] };
@@ -573,9 +573,9 @@ router.get('/reports/sales', authenticateToken, async (req, res) => {
     else if (store_id) targetStore = parseInt(store_id);
 
     let queryCondition = `WHERE sa.status = 'COMPLETED' AND si.item_type = 'accessory'`;
-    if (targetStore) queryCondition += ` AND sa.store_id = \${targetStore}`;
-    if (date_from) queryCondition += ` AND DATE(sa.sale_date, '+5 hours', '+30 minutes') >= '\${date_from}'`;
-    if (date_to) queryCondition += ` AND DATE(sa.sale_date, '+5 hours', '+30 minutes') <= '\${date_to}'`;
+    if (targetStore) queryCondition += ` AND sa.store_id = ${targetStore}`;
+    if (date_from) queryCondition += ` AND CAST(sa.sale_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata' AS DATE) >= '${date_from}'`;
+    if (date_to) queryCondition += ` AND CAST(sa.sale_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata' AS DATE) <= '${date_to}'`;
 
     const reportRaw = await prisma.$queryRawUnsafe(`
       SELECT 
@@ -585,7 +585,7 @@ router.get('/reports/sales', authenticateToken, async (req, res) => {
         COALESCE(SUM(si.sgst), 0) as total_sgst, COALESCE(SUM(si.igst), 0) as total_igst,
         COALESCE(SUM(si.unit_cost * si.quantity), 0) as total_cogs_taxable,
         COALESCE(SUM(si.taxable_amount - (si.unit_cost * si.quantity)), 0) as gross_profit
-      FROM sales sa JOIN sale_items si ON sa.id = si.sale_id \${queryCondition}
+      FROM sales sa JOIN sale_items si ON sa.id = si.sale_id ${queryCondition}
     `);
 
     const report = { ...reportRaw[0] };
@@ -597,7 +597,7 @@ router.get('/reports/sales', authenticateToken, async (req, res) => {
         customerAmount: { totalTransactions: report.total_transactions, totalUnitsSold: report.total_accessories_sold, totalSalesInclusive: report.total_sales_inclusive },
         accountingBreakdown: {
           taxableSales: report.taxable_sales, gstCollected: report.gst_collected, cgst: report.total_cgst, sgst: report.total_sgst, igst: report.total_igst,
-          costOfGoodsTaxable: report.total_cogs_taxable, grossProfit: report.gross_profit, profitMargin: report.taxable_sales > 0 ? `\${((report.gross_profit / report.taxable_sales) * 100).toFixed(1)}%` : '0%'
+          costOfGoodsTaxable: report.total_cogs_taxable, grossProfit: report.gross_profit, profitMargin: report.taxable_sales > 0 ? `${((report.gross_profit / report.taxable_sales) * 100).toFixed(1)}%` : '0%'
         }
       }
     });

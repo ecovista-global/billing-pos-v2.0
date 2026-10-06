@@ -134,7 +134,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
 function isValidPassword(password) {
   if (!password || password.length < 8) return false;
-  const hasNumber = /\\d/.test(password);
+  const hasNumber = /\d/.test(password);
   const hasUpper = /[A-Z]/.test(password);
   const hasSpecial = /[!@#$%^&*(),.?":{}|<>_=+\[\]\\/;'~-]/.test(password);
   return Boolean(hasNumber && hasUpper && hasSpecial);
@@ -158,7 +158,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 
     let cleanPhone = null;
     if (phone) {
-      cleanPhone = phone.replace(/\\D/g, '');
+      cleanPhone = phone.replace(/\D/g, '');
       if (cleanPhone.length !== 10) {
         return res.status(400).json({ success: false, message: 'Employee phone number must be exactly 10 digits.' });
       }
@@ -167,7 +167,7 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
     const salt = bcrypt.genSaltSync(10);
     const hash = bcrypt.hashSync(password, salt);
 
-    const generatedId = employee_id || `ECO-EMP-\${Math.floor(100 + Math.random() * 900)}`;
+    const generatedId = employee_id || `ECO-EMP-${Math.floor(100 + Math.random() * 900)}`;
     const initialStatus = ['active', 'inactive', 'disabled', 'suspended'].includes(status) ? status : 'active';
 
     const newEmployee = await prisma.user.create({
@@ -202,7 +202,7 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
 
     let cleanPhone = null;
     if (phone) {
-      cleanPhone = phone.replace(/\\D/g, '');
+      cleanPhone = phone.replace(/\D/g, '');
       if (cleanPhone.length !== 10) {
         return res.status(400).json({ success: false, message: 'Employee phone number must be exactly 10 digits.' });
       }
@@ -291,7 +291,7 @@ router.patch('/:id/status', authenticateToken, requireAdmin, async (req, res) =>
 
     await logAudit(req.user.id, req.user.username, 'TOGGLE_EMPLOYEE_STATUS', null, 'USER', String(id), { status }, req);
 
-    res.json({ success: true, message: `Account status updated to \${status}.` });
+    res.json({ success: true, message: `Account status updated to ${status}.` });
   } catch (err) {
     console.error('Toggle Employee Status Error:', err);
     res.status(500).json({ success: false, message: 'Internal Server Error' });
@@ -320,7 +320,7 @@ router.patch('/:id/unlock', authenticateToken, requireAdmin, async (req, res) =>
       action: 'Admin unlocked account and reset failed login attempts'
     }, req);
 
-    res.json({ success: true, message: `Account for \${employee.username} has been unlocked successfully.` });
+    res.json({ success: true, message: `Account for ${employee.username} has been unlocked successfully.` });
   } catch (err) {
     console.error('Unlock Account Error:', err);
     res.status(500).json({ success: false, message: 'Internal Server Error' });
@@ -367,7 +367,7 @@ router.put('/:id/permissions', authenticateToken, requireAdmin, async (req, res)
     const updatedPermissions = parseUserPermissions(permissionsJson, 'employee');
     res.json({
       success: true,
-      message: `Access permissions for \${target.fullName} (\${target.username}) updated successfully.`,
+      message: `Access permissions for ${target.fullName} (${target.username}) updated successfully.`,
       permissions: updatedPermissions
     });
   } catch (err) {

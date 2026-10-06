@@ -317,7 +317,7 @@ export default function POS() {
 
         let grossTotalWithTax = 0;
 
-        if (item.item_type === 'accessory') {
+        if (item.item_type === 'accessory' || item.item_type === 'quick_bill_accessory') {
           // Accessory: Entered selling price already includes 18% GST (Rule 10: Discount applied on GST-inclusive price)
           const sPrice = (parseFloat(item.selling_price) || 0) * (item.quantity || 1);
           grossTotalWithTax = sPrice;
@@ -331,8 +331,13 @@ export default function POS() {
           const tRate = (item.tax_rate !== undefined && item.tax_rate !== null && !isNaN(parseFloat(item.tax_rate)))
             ? parseFloat(item.tax_rate)
             : systemTaxRate;
-          const itemTax = Math.round((diff * (tRate / 100)) * 100) / 100;
-          grossTotalWithTax = sPrice + itemTax;
+          let itemTax = 0;
+          if (item.price_includes_gst == 1) {
+            grossTotalWithTax = sPrice;
+          } else {
+            itemTax = Math.round((diff * (tRate / 100)) * 100) / 100;
+            grossTotalWithTax = sPrice + itemTax;
+          }
         }
 
         let rupeeDiscount = 0;
@@ -358,7 +363,7 @@ export default function POS() {
   // - Phones: Rule 32(5) Margin Scheme (5% on Difference)
   // - Accessories: 18% GST-Inclusive (Taxable = Final * 100 / 118, GST = Final - Taxable)
   const cartWithMargin = cart.map(item => {
-    if (item.item_type === 'accessory') {
+    if (item.item_type === 'accessory' || item.item_type === 'quick_bill_accessory') {
       const unitPrice = parseFloat(item.selling_price) || 0;
       const qty = item.quantity || 1;
       const sPrice = Math.round(unitPrice * qty * 100) / 100;
@@ -385,38 +390,53 @@ export default function POS() {
         taxable
       };
     } else {
-      // Phone Margin Scheme
+      // Phone Margin Scheme (ALWAYS GST-INCLUSIVE)
       const sPrice = parseFloat(item.selling_price) || 0;
       const pPrice = parseFloat(item.purchase_price !== undefined && item.purchase_price !== null && parseFloat(item.purchase_price) > 0
         ? item.purchase_price
         : (item.total_cost || 0));
-      const difference = Math.max(0, sPrice - pPrice);
+      
       const tRate = (item.tax_rate !== undefined && item.tax_rate !== null && !isNaN(parseFloat(item.tax_rate)))
         ? parseFloat(item.tax_rate)
         : systemTaxRate;
-      const itemTax = Math.round((difference * (tRate / 100)) * 100) / 100;
-      const grossPriceWithTax = sPrice + itemTax;
-      const disc = Math.min(grossPriceWithTax, parseFloat(item.discount) || 0);
-      const finalPrice = Math.max(0, grossPriceWithTax - disc);
+
+      // Calculate discount first based on entered sPrice
+      const numVal = parseFloat(item.discount_value) || 0;
+      let discAmount = 0;
+      if (item.discount_mode === 'percent') {
+        const clampedPercent = Math.min(100, Math.max(0, numVal));
+        discAmount = Math.round(((sPrice * clampedPercent) / 100) * 100) / 100;
+      } else {
+        discAmount = Math.min(sPrice, Math.max(0, numVal));
+      }
+
+      // Customer pays this final amount
+      const finalPrice = Math.max(0, sPrice - discAmount);
+
+      // Now calculate margin from final customer price (inclusive of GST)
+      const inclusiveDifference = Math.max(0, finalPrice - pPrice);
+      const taxableMargin = inclusiveDifference / (1 + (tRate / 100));
+      const itemTax = Math.round((taxableMargin * (tRate / 100)) * 100) / 100;
+      const taxable = Math.round(taxableMargin * 100) / 100;
 
       return {
         ...item,
         sPrice,
         pPrice,
-        difference,
+        difference: taxableMargin, 
         tRate,
         itemTax,
-        grossPriceWithTax,
-        disc,
+        grossPriceWithTax: sPrice,
+        disc: discAmount,
         finalPrice,
-        taxable: difference
+        taxable
       };
     }
   });
 
   // Financial Subtotals
-  const phoneItems = cartWithMargin.filter(i => i.item_type !== 'accessory');
-  const accessoryItems = cartWithMargin.filter(i => i.item_type === 'accessory');
+  const phoneItems = cartWithMargin.filter(i => i.item_type !== 'accessory' && i.item_type !== 'quick_bill_accessory');
+  const accessoryItems = cartWithMargin.filter(i => i.item_type === 'accessory' || i.item_type === 'quick_bill_accessory');
 
   const phoneSubtotal = phoneItems.reduce((acc, i) => acc + i.sPrice, 0);
   const phoneTax = phoneItems.reduce((acc, i) => acc + i.itemTax, 0);
@@ -499,16 +519,21 @@ export default function POS() {
         },
         items: cart.map(item => ({
           item_type: item.item_type || 'phone',
-          phone_id: item.item_type === 'accessory' ? null : item.id,
+          phone_id: (item.item_type === 'accessory' || item.item_type === 'quick_bill' || item.item_type === 'quick_bill_accessory') ? null : item.id,
           accessory_id: item.item_type === 'accessory' ? item.id : null,
-          quantity: item.item_type === 'accessory' ? (item.quantity || 1) : 1,
+          quantity: (item.item_type === 'accessory' || item.item_type === 'quick_bill_accessory') ? (item.quantity || 1) : 1,
           selling_price: item.selling_price,
           discount: item.discount,
-          tax_rate: item.item_type === 'accessory'
+          tax_rate: (item.item_type === 'accessory' || item.item_type === 'quick_bill_accessory')
             ? 18.0
             : ((item.tax_rate !== undefined && item.tax_rate !== null && !isNaN(parseFloat(item.tax_rate)))
               ? parseFloat(item.tax_rate)
-              : systemTaxRate)
+              : systemTaxRate),
+          brand: item.brand,
+          model: item.model,
+          variant: item.variant,
+          imei1: item.imei1,
+          condition_grade: item.condition_grade
         })),
         exchange_device: hasExchange ? {
           ...exchangeDevice,
@@ -974,7 +999,7 @@ export default function POS() {
             ) : (
               <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
                 {cartWithMargin.map((item) => {
-                  const isAccessory = item.item_type === 'accessory';
+                  const isAccessory = item.item_type === 'accessory' || item.item_type === 'quick_bill_accessory';
                   const itemSellingPrice = item.sPrice;
                   const itemGrossPriceWithTax = item.grossPriceWithTax;
                   const itemDiscount = item.disc;
@@ -1017,7 +1042,11 @@ export default function POS() {
 
                           {}
                           <div className="flex items-center gap-1.5 text-[10px] mt-1">
-                            {isAccessory ? (
+                            {item.item_type === 'quick_bill' || item.item_type === 'quick_bill_accessory' ? (
+                              <span className="bg-amber-100/60 text-amber-900 border border-amber-200 font-semibold px-1.5 py-0.5 rounded text-[9px]">
+                                Quick Bill (GST Auto-Adjust)
+                              </span>
+                            ) : isAccessory ? (
                               <>
                                 <span className="bg-indigo-100/60 text-indigo-900 border border-indigo-200 font-semibold px-1.5 py-0.5 rounded text-[9px]">
                                   Taxable: {formatCurrency(item.taxable)}
@@ -1032,7 +1061,7 @@ export default function POS() {
                                   Diff: {formatCurrency(itemDifference)}
                                 </span>
                                 <span className="text-slate-500 text-[10px]">
-                                  GST ({itemTaxRate}%): <strong className="text-slate-800">+{formatCurrency(itemTax)}</strong>
+                                  GST ({itemTaxRate}%{item.price_includes_gst ? ' Incl' : ''}): <strong className="text-slate-800">{!item.price_includes_gst ? '+' : ''}{formatCurrency(itemTax)}</strong>
                                 </span>
                               </>
                             )}

@@ -233,13 +233,13 @@ router.post('/', authenticateToken, enforceStoreContext, async (req, res) => {
     if (existing) {
       return res.status(400).json({ 
         success: false, 
-        message: `Customer with phone \${cleanPhone} already exists (\${existing.fullName}).`, 
+        message: `Customer with phone ${cleanPhone} already exists (${existing.fullName}).`, 
         customerId: existing.id 
       });
     }
 
     const cCount = await prisma.customer.count();
-    const customerCode = `CUST-\${String(cCount + 1).padStart(4, '0')}`;
+    const customerCode = `CUST-${String(cCount + 1).padStart(4, '0')}`;
 
     const targetStoreId = req.user.role === 'admin' ? (req.body.store_id || null) : req.storeContext.store_id;
 

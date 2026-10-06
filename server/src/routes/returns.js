@@ -6,7 +6,7 @@ const { enforceStoreContext } = require('../middleware/storeContext');
 
 async function getNextReturnNumber() {
   const currentYear = new Date().getFullYear();
-  const prefix = `RET-\${currentYear}-`;
+  const prefix = `RET-${currentYear}-`;
 
   const last = await prisma.return.findFirst({
     where: {
@@ -27,7 +27,7 @@ async function getNextReturnNumber() {
       if (!isNaN(parsed)) nextSeq = parsed + 1;
     }
   }
-  return `\${prefix}\${String(nextSeq).padStart(6, '0')}`;
+  return `${prefix}${String(nextSeq).padStart(6, '0')}`;
 }
 
 // GET /api/returns
@@ -114,7 +114,7 @@ router.post('/', authenticateToken, async (req, res) => {
     });
 
     if (!saleItem) {
-      return res.status(404).json({ success: false, message: `Device with IMEI \${imei} was not found on this invoice.` });
+      return res.status(404).json({ success: false, message: `Device with IMEI ${imei} was not found on this invoice.` });
     }
 
     const returnNumber = await getNextReturnNumber();
@@ -147,7 +147,7 @@ router.post('/', authenticateToken, async (req, res) => {
 
       // Update phone inventory to RETURNED or DEFECTIVE
       const existingNotes = saleItem.phone?.notes || '';
-      const newNotes = existingNotes + (existingNotes ? ' ' : '') + `[Returned via \${returnNumber}]`;
+      const newNotes = existingNotes + (existingNotes ? ' ' : '') + `[Returned via ${returnNumber}]`;
       
       await tx.phoneInventory.update({
         where: { id: saleItem.phoneId },

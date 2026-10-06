@@ -42,9 +42,9 @@ router.get('/', authenticateToken, enforceStoreContext, async (req, res) => {
     }
 
     const storeFilter = storeId ? `AND sa.store_id = ${parseInt(storeId)}` : '';
-    const invStoreFilter = storeId ? `WHERE current_store_id = \${parseInt(storeId)}` : '';
-    const expStoreFilter = storeId ? `AND (store_id = \${parseInt(storeId)} OR store_id IS NULL)` : '';
-    const currentStoreIdCond = storeId ? `AND p.current_store_id = \${parseInt(storeId)}` : '';
+    const invStoreFilter = storeId ? `WHERE current_store_id = ${parseInt(storeId)}` : '';
+    const expStoreFilter = storeId ? `AND (store_id = ${parseInt(storeId)} OR store_id IS NULL)` : '';
+    const currentStoreIdCond = storeId ? `AND p.current_store_id = ${parseInt(storeId)}` : '';
 
     // 1. Today's stats
     const todayRaw = await prisma.$queryRawUnsafe(`
@@ -56,7 +56,7 @@ router.get('/', authenticateToken, enforceStoreContext, async (req, res) => {
         COALESCE(SUM((si.selling_price * COALESCE(si.quantity, 1) - COALESCE(si.discount, 0)) - (si.unit_cost * COALESCE(si.quantity, 1))), 0) as today_profit
       FROM sales sa
       LEFT JOIN sale_items si ON sa.id = si.sale_id
-      WHERE sa.status = 'COMPLETED' AND CAST(sa.sale_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata' AS DATE) = CAST(NOW() AT TIME ZONE 'Asia/Kolkata' AS DATE) \${storeFilter}
+      WHERE sa.status = 'COMPLETED' AND CAST(sa.sale_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata' AS DATE) = CAST(NOW() AT TIME ZONE 'Asia/Kolkata' AS DATE) ${storeFilter}
     `);
     const today = mapBigIntToNumber(todayRaw[0] || {});
 
@@ -64,7 +64,7 @@ router.get('/', authenticateToken, enforceStoreContext, async (req, res) => {
     const todayExpensesRaw = await prisma.$queryRawUnsafe(`
       SELECT COALESCE(SUM(amount), 0) as today_expenses
       FROM expenses
-      WHERE CAST(expense_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata' AS DATE) = CAST(NOW() AT TIME ZONE 'Asia/Kolkata' AS DATE) \${expStoreFilter}
+      WHERE CAST(expense_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata' AS DATE) = CAST(NOW() AT TIME ZONE 'Asia/Kolkata' AS DATE) ${expStoreFilter}
     `);
     const todayExpenses = mapBigIntToNumber(todayExpensesRaw[0] || { today_expenses: 0 });
 
@@ -79,7 +79,7 @@ router.get('/', authenticateToken, enforceStoreContext, async (req, res) => {
         COALESCE(SUM((si.selling_price * COALESCE(si.quantity, 1) - COALESCE(si.discount, 0)) - (si.unit_cost * COALESCE(si.quantity, 1))), 0) as total_profit
       FROM sales sa
       LEFT JOIN sale_items si ON sa.id = si.sale_id
-      WHERE sa.status = 'COMPLETED' \${dateFilter} \${storeFilter}
+      WHERE sa.status = 'COMPLETED' ${dateFilter} ${storeFilter}
     `);
     const overview = mapBigIntToNumber(overviewRaw[0] || {});
 
@@ -94,7 +94,7 @@ router.get('/', authenticateToken, enforceStoreContext, async (req, res) => {
         COALESCE(SUM(CASE WHEN stock_status = 'AVAILABLE' THEN total_cost ELSE 0 END), 0) as total_inventory_cost,
         COALESCE(SUM(CASE WHEN stock_status = 'AVAILABLE' THEN final_selling_price ELSE 0 END), 0) as total_inventory_value
       FROM phone_inventory
-      \${invStoreFilter}
+      ${invStoreFilter}
     `);
     const inventory = mapBigIntToNumber(inventoryRaw[0] || {});
 
@@ -109,9 +109,9 @@ router.get('/', authenticateToken, enforceStoreContext, async (req, res) => {
       SELECT brand, model, COUNT(*) as qty, s.name as store_name
       FROM phone_inventory p
       JOIN stores s ON p.current_store_id = s.id
-      WHERE p.stock_status = 'AVAILABLE' \${currentStoreIdCond}
-      GROUP BY p.current_store_id, brand, model
-      HAVING qty <= 1
+      WHERE p.stock_status = 'AVAILABLE' ${currentStoreIdCond}
+      GROUP BY p.current_store_id, brand, model, s.name
+      HAVING COUNT(*) <= 1
       LIMIT 6
     `);
     const lowStock = lowStockRaw.map(mapBigIntToNumber);
@@ -133,7 +133,7 @@ router.get('/', authenticateToken, enforceStoreContext, async (req, res) => {
           COALESCE(SUM((si.selling_price * COALESCE(si.quantity, 1) - COALESCE(si.discount, 0)) - (si.unit_cost * COALESCE(si.quantity, 1))), 0) as profit,
           (SELECT COUNT(*) FROM phone_inventory p WHERE p.current_store_id = s.id AND p.stock_status = 'AVAILABLE') as inventory_count
         FROM stores s
-        LEFT JOIN sales sa ON s.id = sa.store_id AND sa.status = 'COMPLETED' \${dateFilter}
+        LEFT JOIN sales sa ON s.id = sa.store_id AND sa.status = 'COMPLETED' ${dateFilter}
         LEFT JOIN sale_items si ON sa.id = si.sale_id
         GROUP BY s.id
         ORDER BY revenue DESC
@@ -144,14 +144,14 @@ router.get('/', authenticateToken, enforceStoreContext, async (req, res) => {
     // 4. Chart Data: Daily Sales / Revenue
     const salesChartRaw = await prisma.$queryRawUnsafe(`
       SELECT 
-        DATE(sa.sale_date, '+5 hours', '+30 minutes') as date,
+        CAST(sa.sale_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata' AS DATE) as date,
         COUNT(DISTINCT sa.id) as orders,
         SUM(sa.grand_total) as revenue,
         SUM((si.selling_price * COALESCE(si.quantity, 1) - COALESCE(si.discount, 0)) - (si.unit_cost * COALESCE(si.quantity, 1))) as profit
       FROM sales sa
       JOIN sale_items si ON sa.id = si.sale_id
-      WHERE sa.status = 'COMPLETED' AND sa.sale_date >= DATE('now', '+5 hours', '+30 minutes', '-30 days') \${storeFilter}
-      GROUP BY DATE(sa.sale_date, '+5 hours', '+30 minutes')
+      WHERE sa.status = 'COMPLETED' AND sa.sale_date >= (NOW() AT TIME ZONE 'Asia/Kolkata') - INTERVAL '30 days' ${storeFilter}
+      GROUP BY CAST(sa.sale_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata' AS DATE)
       ORDER BY date ASC
     `);
     const salesTimeline = salesChartRaw.map(mapBigIntToNumber);
@@ -161,7 +161,7 @@ router.get('/', authenticateToken, enforceStoreContext, async (req, res) => {
       SELECT si.brand, COUNT(*) as count, SUM(si.final_price) as revenue
       FROM sale_items si
       JOIN sales sa ON si.sale_id = sa.id
-      WHERE sa.status = 'COMPLETED' \${storeFilter}
+      WHERE sa.status = 'COMPLETED' ${storeFilter}
       GROUP BY si.brand
       ORDER BY count DESC
       LIMIT 6

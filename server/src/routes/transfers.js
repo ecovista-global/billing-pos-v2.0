@@ -5,7 +5,7 @@ const { authenticateToken, requireAdmin, requireSuperAdmin, requireDeletePermiss
 
 async function getNextTransferNumber() {
   const currentYear = new Date().getFullYear();
-  const prefix = `TRF-\${currentYear}-`;
+  const prefix = `TRF-${currentYear}-`;
 
   const last = await prisma.stockTransfer.findFirst({
     where: {
@@ -25,7 +25,7 @@ async function getNextTransferNumber() {
       if (!isNaN(parsed)) nextSeq = parsed + 1;
     }
   }
-  return `\${prefix}\${String(nextSeq).padStart(6, '0')}`;
+  return `${prefix}${String(nextSeq).padStart(6, '0')}`;
 }
 
 // GET /api/transfers
@@ -174,12 +174,12 @@ router.post('/', authenticateToken, async (req, res) => {
     const result = await prisma.$transaction(async (tx) => {
       for (const phoneId of phone_ids) {
         const phone = await tx.phoneInventory.findUnique({ where: { id: phoneId } });
-        if (!phone) throw new Error(`Phone ID \${phoneId} not found.`);
+        if (!phone) throw new Error(`Phone ID ${phoneId} not found.`);
         if (phone.currentStoreId !== parseInt(from_store_id)) {
-          throw new Error(`Device \${phone.brand} \${phone.model} (IMEI: \${phone.imei1}) is not in the source store.`);
+          throw new Error(`Device ${phone.brand} ${phone.model} (IMEI: ${phone.imei1}) is not in the source store.`);
         }
         if (phone.stockStatus !== 'AVAILABLE') {
-          throw new Error(`Device (IMEI: \${phone.imei1}) is not available (Status: \${phone.stockStatus}).`);
+          throw new Error(`Device (IMEI: ${phone.imei1}) is not available (Status: ${phone.stockStatus}).`);
         }
       }
 

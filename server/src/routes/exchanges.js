@@ -5,7 +5,7 @@ const { authenticateToken, requireAdmin, requireSuperAdmin, requireDeletePermiss
 
 async function getNextExchangeNumber() {
   const currentYear = new Date().getFullYear();
-  const prefix = `EXC-\${currentYear}-`;
+  const prefix = `EXC-${currentYear}-`;
 
   const last = await prisma.exchangedPhone.findFirst({
     where: {
@@ -28,7 +28,7 @@ async function getNextExchangeNumber() {
     }
   }
 
-  return `\${prefix}\${String(nextSeq).padStart(6, '0')}`;
+  return `${prefix}${String(nextSeq).padStart(6, '0')}`;
 }
 
 // GET /api/exchanges (List all exchanged phones with filters and summary stats)
@@ -50,7 +50,7 @@ router.get('/', authenticateToken, async (req, res) => {
     if (date_from || date_to) {
       whereClause.exchangeDate = {};
       if (date_from) whereClause.exchangeDate.gte = new Date(date_from);
-      if (date_to) whereClause.exchangeDate.lte = new Date(`\${date_to}T23:59:59.999Z`);
+      if (date_to) whereClause.exchangeDate.lte = new Date(`${date_to}T23:59:59.999Z`);
     }
 
     if (search) {
@@ -75,17 +75,17 @@ router.get('/', authenticateToken, async (req, res) => {
     });
 
     // KPI stats using queryRaw for complex conditional sums
-    let kpiWhere = req.user.role !== 'admin' ? `WHERE store_id = \${req.user.assigned_store_id}` : (store_id ? `WHERE store_id = \${parseInt(store_id)}` : '');
+    let kpiWhere = req.user.role !== 'admin' ? `WHERE store_id = ${req.user.assigned_store_id}` : (store_id ? `WHERE store_id = ${parseInt(store_id)}` : '');
     
     const kpisRaw = await prisma.$queryRawUnsafe(`
       SELECT
         COUNT(*) as total_devices,
         COALESCE(SUM(exchange_value), 0) as total_valuation,
-        SUM(CASE WHEN DATE(exchange_date, '+5 hours', '+30 minutes') = DATE('now', '+5 hours', '+30 minutes') THEN 1 ELSE 0 END) as today_count,
+        SUM(CASE WHEN CAST(exchange_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata' AS DATE) = CAST(NOW() AT TIME ZONE 'Asia/Kolkata' AS DATE) THEN 1 ELSE 0 END) as today_count,
         SUM(CASE WHEN status = 'IN_STOCK' THEN 1 ELSE 0 END) as in_stock_count,
         SUM(CASE WHEN status = 'ADDED_TO_INVENTORY' THEN 1 ELSE 0 END) as converted_to_inventory_count
       FROM exchanged_phones
-      \${kpiWhere}
+      ${kpiWhere}
     `);
     
     const kpis = { ...kpisRaw[0] };
@@ -272,7 +272,7 @@ router.patch('/:id/status', authenticateToken, async (req, res) => {
 
     const validStatuses = ['IN_STOCK', 'REFURBISHING', 'ADDED_TO_INVENTORY', 'SCRAPPED', 'SOLD'];
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ success: false, message: `Invalid status. Must be one of: \${validStatuses.join(', ')}` });
+      return res.status(400).json({ success: false, message: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
     }
 
     const existing = await prisma.exchangedPhone.findUnique({ where: { id } });
@@ -294,7 +294,7 @@ router.patch('/:id/status', authenticateToken, async (req, res) => {
 
     await logAudit(req.user.id, req.user.username, 'UPDATE_EXCHANGE_STATUS', existing.storeId, 'EXCHANGE', String(id), { oldStatus: existing.status, newStatus: status, notes }, req);
 
-    res.json({ success: true, message: `Status updated to \${status}.` });
+    res.json({ success: true, message: `Status updated to ${status}.` });
   } catch (error) {
     console.error('Error updating status:', error);
     res.status(500).json({ success: false, message: 'Internal Server Error' });
@@ -322,7 +322,7 @@ router.post('/:id/move-to-inventory', authenticateToken, async (req, res) => {
     if (existingImei && existingImei.stockStatus === 'AVAILABLE') {
       return res.status(400).json({
         success: false,
-        message: `A device with IMEI \${exchange.imei1} already exists in available inventory (ID #\${existingImei.id}).`
+        message: `A device with IMEI ${exchange.imei1} already exists in available inventory (ID #${existingImei.id}).`
       });
     }
 
@@ -335,7 +335,7 @@ router.post('/:id/move-to-inventory', authenticateToken, async (req, res) => {
     const taxAmount = Math.round((difference * (taxRate / 100)) * 100) / 100;
     const finalPrice = suggestedSellingPrice + taxAmount;
 
-    const internalProductId = `ECO-EXC-\${Math.floor(10000 + Math.random() * 90000)}`;
+    const internalProductId = `ECO-EXC-${Math.floor(10000 + Math.random() * 90000)}`;
 
     const newInventoryId = await prisma.$transaction(async (tx) => {
       const inv = await tx.phoneInventory.create({
@@ -362,7 +362,7 @@ router.post('/:id/move-to-inventory', authenticateToken, async (req, res) => {
           finalSellingPrice: finalPrice,
           currentStoreId: exchange.storeId,
           stockStatus: 'AVAILABLE',
-          notes: notes || `Acquired via Customer Exchange #\${exchange.exchangeNumber} from \${exchange.customerName}`
+          notes: notes || `Acquired via Customer Exchange #${exchange.exchangeNumber} from ${exchange.customerName}`
         }
       });
 
@@ -390,7 +390,7 @@ router.post('/:id/move-to-inventory', authenticateToken, async (req, res) => {
 
     res.json({
       success: true,
-      message: `Device successfully converted to sellable inventory (ID #\${newInventoryId})!`,
+      message: `Device successfully converted to sellable inventory (ID #${newInventoryId})!`,
       phone_inventory_id: newInventoryId
     });
   } catch (error) {

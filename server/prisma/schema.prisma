@@ -293,6 +293,7 @@ model SaleItem {
 
   sale      Sale            @relation(fields: [saleId], references: [id], onDelete: Cascade)
   phone     PhoneInventory? @relation(fields: [phoneId], references: [id])
+  accessory Accessory?      @relation(fields: [accessoryId], references: [id])
 
   @@map("sale_items")
 }
@@ -562,6 +563,7 @@ model Accessory {
   store     Store     @relation(fields: [storeId], references: [id])
   supplier  Supplier? @relation(fields: [supplierId], references: [id])
   purchases AccessoryPurchase[]
+  saleItems SaleItem[]
 
   @@index([storeId, status], name: "idx_accessories_store_status")
   @@map("accessories")

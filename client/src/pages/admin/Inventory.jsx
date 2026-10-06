@@ -342,6 +342,7 @@ export default function Inventory() {
         >
           <option value="">All Statuses</option>
           <option value="AVAILABLE">AVAILABLE</option>
+          <option value="QUICK_BILLED">QUICK BILLED (Pending Cost)</option>
           <option value="SOLD">SOLD</option>
           <option value="IN_TRANSIT">IN TRANSIT</option>
           <option value="RETURNED">RETURNED</option>

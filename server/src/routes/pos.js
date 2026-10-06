@@ -6,11 +6,11 @@ const { enforceStoreContext } = require('../middleware/storeContext');
 const exchangeRouter = require('./exchanges');
 
 // Helper to generate next unique sequential invoice number (Rule 5)
-async function getNextInvoiceNumber() {
+async function getNextInvoiceNumber(prismaClient = prisma) {
   const currentYear = new Date().getFullYear();
-  const prefix = `ECO-\${currentYear}-`;
+  const prefix = `ECO-${currentYear}-`;
 
-  const lastSale = await prisma.sale.findFirst({
+  const lastSale = await prismaClient.sale.findFirst({
     where: { invoiceNumber: { startsWith: prefix } },
     orderBy: { id: 'desc' },
     select: { invoiceNumber: true }
@@ -27,15 +27,15 @@ async function getNextInvoiceNumber() {
     }
   }
 
-  return `\${prefix}\${String(nextSequence).padStart(6, '0')}`;
+  return `${prefix}${String(nextSequence).padStart(6, '0')}`;
 }
 
 // Helper to generate sale number
-async function getNextSaleNumber() {
+async function getNextSaleNumber(prismaClient = prisma) {
   const currentYear = new Date().getFullYear();
-  const prefix = `SL-\${currentYear}-`;
+  const prefix = `SL-${currentYear}-`;
 
-  const last = await prisma.sale.findFirst({
+  const last = await prismaClient.sale.findFirst({
     where: { saleNumber: { startsWith: prefix } },
     orderBy: { id: 'desc' },
     select: { saleNumber: true }
@@ -52,7 +52,7 @@ async function getNextSaleNumber() {
     }
   }
 
-  return `\${prefix}\${String(nextSequence).padStart(6, '0')}`;
+  return `${prefix}${String(nextSequence).padStart(6, '0')}`;
 }
 
 // GET /api/sales (List sales with filters)
@@ -71,7 +71,7 @@ router.get('/', authenticateToken, enforceStoreContext, async (req, res) => {
     if (date_from || date_to) {
       whereClause.saleDate = {};
       if (date_from) whereClause.saleDate.gte = new Date(date_from);
-      if (date_to) whereClause.saleDate.lte = new Date(`\${date_to}T23:59:59.999Z`);
+      if (date_to) whereClause.saleDate.lte = new Date(`${date_to}T23:59:59.999Z`);
     }
 
     if (search) {
@@ -156,14 +156,14 @@ router.get('/:id', authenticateToken, enforceStoreContext, async (req, res) => {
         store: true,
         employee: true,
         customer: true,
-        items: {
+        saleItems: {
           include: {
             phone: true,
             accessory: true
           }
         },
         payments: true,
-        exchanges: true
+        exchangedPhones: true
       }
     });
 
@@ -219,7 +219,7 @@ router.get('/:id', authenticateToken, enforceStoreContext, async (req, res) => {
       customer_gstin: sa.customer?.gstin
     };
 
-    const mappedItems = sa.items.map(si => ({
+    const mappedItems = sa.saleItems.map(si => ({
       id: si.id,
       sale_id: si.saleId,
       item_type: si.itemType,
@@ -340,8 +340,9 @@ router.post('/', authenticateToken, enforceStoreContext, async (req, res) => {
               customerId = existingCustomer.id;
               custRecord = existingCustomer;
             } else {
-              const cCount = await tx.customer.count();
-              const custCode = `CUST-\${String(cCount + 1).padStart(4, '0')}`;
+              const lastCust = await tx.customer.findFirst({ orderBy: { id: 'desc' } });
+              const nextCustSeq = lastCust ? lastCust.id + 1 : 1;
+              const custCode = `CUST-${String(nextCustSeq).padStart(6, '0')}`;
               const cRes = await tx.customer.create({
                 data: {
                   customerCode: custCode,
@@ -449,12 +450,19 @@ router.post('/', authenticateToken, enforceStoreContext, async (req, res) => {
                   }
                 });
               } else {
+                const existingPhone = await tx.phoneInventory.findUnique({ where: { imei1: item.imei1 } });
+                if (existingPhone) {
+                  throw new Error(`IMEI ${item.imei1} already exists in inventory (Status: ${existingPhone.stockStatus}). Please add it from the regular inventory panel, or check the IMEI.`);
+                }
+
                 const pPrice = 0;
-                difference = Math.max(0, sPrice - pPrice);
-                taxAmount = Math.round((difference * (tRate / 100)) * 100) / 100;
-                grossPriceWithTax = sPrice + taxAmount;
-                disc = Math.min(grossPriceWithTax, parseFloat(item.discount || 0));
-                finalPrice = Math.max(0, grossPriceWithTax - disc);
+                disc = Math.min(sPrice, Math.max(0, parseFloat(item.discount || 0)));
+                finalPrice = Math.max(0, sPrice - disc);
+                
+                const inclusiveDifference = Math.max(0, finalPrice - pPrice);
+                const taxableMargin = inclusiveDifference / (1 + (tRate / 100));
+                taxAmount = Math.round((taxableMargin * (tRate / 100)) * 100) / 100;
+                difference = Math.round(taxableMargin * 100) / 100;
                 
                 const tempProdId = `QB-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
                 quickPhone = await tx.phoneInventory.create({
@@ -504,18 +512,18 @@ router.post('/', authenticateToken, enforceStoreContext, async (req, res) => {
                   item_type: 'quick_bill', phone: quickPhone, quantity: 1,
                   unit_cost: 0, selling_price: sPrice,
                   discount: disc, purchase_price: 0, taxable_amount: difference,
-                  tax_rate: tRate, price_includes_gst: 0, cgst, sgst, igst, total_tax: taxAmount, final_price: finalPrice
+                  tax_rate: tRate, price_includes_gst: 1, cgst, sgst, igst, total_tax: taxAmount, final_price: finalPrice
                 });
               }
 
             } else if (isAccessory) {
               const accessoryId = item.accessory_id || item.id;
               const accessory = await tx.accessory.findUnique({ where: { id: parseInt(accessoryId) } });
-              if (!accessory) throw new Error(`Accessory ID \${accessoryId} does not exist.`);
+              if (!accessory) throw new Error(`Accessory ID ${accessoryId} does not exist.`);
               
               const qty = Math.max(1, parseInt(item.quantity, 10) || 1);
-              if (accessory.quantity < qty) throw new Error(`Insufficient stock for accessory "\${accessory.name}". Requested: \${qty}, Available: \${accessory.quantity}`);
-              if (accessory.storeId !== storeId) throw new Error(`Accessory "\${accessory.name}" belongs to another store.`);
+              if (accessory.quantity < qty) throw new Error(`Insufficient stock for accessory "${accessory.name}". Requested: ${qty}, Available: ${accessory.quantity}`);
+              if (accessory.storeId !== storeId) throw new Error(`Accessory "${accessory.name}" belongs to another store.`);
 
               const unitSellingPriceInclusive = parseFloat(item.selling_price || accessory.sellingPriceInclusive);
               const itemGrossInclusive = Math.round(unitSellingPriceInclusive * qty * 100) / 100;
@@ -551,16 +559,21 @@ router.post('/', authenticateToken, enforceStoreContext, async (req, res) => {
               });
             } else {
               const phone = await tx.phoneInventory.findUnique({ where: { id: parseInt(item.phone_id) } });
-              if (!phone) throw new Error(`Device ID \${item.phone_id} does not exist in inventory.`);
-              if (phone.stockStatus !== 'AVAILABLE') throw new Error(`Device \${phone.brand} \${phone.model} (IMEI: \${phone.imei1}) is currently \${phone.stockStatus}. Cannot be sold again!`);
-              if (phone.currentStoreId !== storeId) throw new Error(`Device (IMEI: \${phone.imei1}) is registered under a different store. Please initiate a stock transfer first.`);
+              if (!phone) throw new Error(`Device ID ${item.phone_id} does not exist in inventory.`);
+              if (phone.stockStatus !== 'AVAILABLE') throw new Error(`Device ${phone.brand} ${phone.model} (IMEI: ${phone.imei1}) is currently ${phone.stockStatus}. Cannot be sold again!`);
+              if (phone.currentStoreId !== storeId) throw new Error(`Device (IMEI: ${phone.imei1}) is registered under a different store. Please initiate a stock transfer first.`);
 
               const sPrice = parseFloat(item.selling_price || phone.sellingPrice);
               const pPrice = parseFloat(phone.purchasePrice !== undefined && phone.purchasePrice !== null && parseFloat(phone.purchasePrice) > 0 ? phone.purchasePrice : (phone.totalCost || 0));
-
-              const difference = Math.max(0, sPrice - pPrice);
               const tRate = (item.tax_rate !== undefined && item.tax_rate !== null && !isNaN(parseFloat(item.tax_rate))) ? parseFloat(item.tax_rate) : systemDefaultTaxRate;
-              const taxAmount = Math.round((difference * (tRate / 100)) * 100) / 100;
+              
+              const disc = Math.min(sPrice, Math.max(0, parseFloat(item.discount || 0)));
+              const finalPrice = Math.max(0, sPrice - disc);
+              
+              const inclusiveDifference = Math.max(0, finalPrice - pPrice);
+              const taxableMargin = inclusiveDifference / (1 + (tRate / 100));
+              const taxAmount = Math.round((taxableMargin * (tRate / 100)) * 100) / 100;
+              const difference = Math.round(taxableMargin * 100) / 100;
 
               const isInterState = custRecord.state && store.state && custRecord.state.toLowerCase() !== store.state.toLowerCase();
               let cgst = 0, sgst = 0, igst = 0;
@@ -569,10 +582,6 @@ router.post('/', authenticateToken, enforceStoreContext, async (req, res) => {
                 cgst = Math.round((taxAmount / 2) * 100) / 100;
                 sgst = Math.round((taxAmount - cgst) * 100) / 100;
               }
-
-              const grossPriceWithTax = sPrice + taxAmount;
-              const disc = Math.min(grossPriceWithTax, parseFloat(item.discount || 0));
-              const finalPrice = Math.max(0, grossPriceWithTax - disc);
 
               subtotal += sPrice;
               discountTotal += disc;
@@ -587,7 +596,7 @@ router.post('/', authenticateToken, enforceStoreContext, async (req, res) => {
                 item_type: 'phone', phone, quantity: 1,
                 unit_cost: phone.totalCost, selling_price: sPrice,
                 discount: disc, purchase_price: pPrice, taxable_amount: difference,
-                tax_rate: tRate, price_includes_gst: 0, cgst, sgst, igst, total_tax: taxAmount, final_price: finalPrice
+                tax_rate: tRate, price_includes_gst: 1, cgst, sgst, igst, total_tax: taxAmount, final_price: finalPrice
               });
             }
           }
@@ -606,14 +615,14 @@ router.post('/', authenticateToken, enforceStoreContext, async (req, res) => {
             }
 
             const existingInStock = await tx.phoneInventory.findFirst({ where: { imei1: imeiClean, stockStatus: 'AVAILABLE' } });
-            if (existingInStock) throw new Error(`Device with IMEI \${imeiClean} is already registered in active store inventory.`);
+            if (existingInStock) throw new Error(`Device with IMEI ${imeiClean} is already registered in active store inventory.`);
 
             exchangeNumber = await exchangeRouter.getNextExchangeNumber();
           }
 
           const netPayable = Math.max(0, grandTotalAll - exchangeAmount);
-          const invoiceNumber = await getNextInvoiceNumber();
-          const saleNumber = await getNextSaleNumber();
+          const invoiceNumber = await getNextInvoiceNumber(tx);
+          const saleNumber = await getNextSaleNumber(tx);
 
           // 5. Insert Sale
           const saleInsert = await tx.sale.create({
@@ -644,7 +653,7 @@ router.post('/', authenticateToken, enforceStoreContext, async (req, res) => {
                 conditionGrade: exchange_device.condition_grade || 'Grade B', batteryHealth: exchange_device.battery_health ? String(exchange_device.battery_health).trim() : null,
                 deviceCondition: exchange_device.device_condition || '', functionalIssues: exchange_device.functional_issues || '',
                 accessoriesIncluded: accessoriesStr, exchangeValue: exchangeAmount, status: 'IN_STOCK',
-                notes: exchange_device.notes || `Exchanged against Bill #\${invoiceNumber}`, exchangeDate: new Date()
+                notes: exchange_device.notes || `Exchanged against Bill #${invoiceNumber}`, exchangeDate: new Date()
               }
             });
             exchangeRecordInfo = { id: exInsert.id, exchange_number: exchangeNumber, exchange_value: exchangeAmount };
@@ -784,7 +793,7 @@ router.post('/:id/void', authenticateToken, enforceStoreContext, requireAdmin, a
     await prisma.$transaction(async (tx) => {
       await tx.sale.update({
         where: { id: saleId },
-        data: { status: 'VOID', notes: (sale.notes || '') + ` [VOIDED: \${reason || 'Admin voided'}]` }
+        data: { status: 'VOID', notes: (sale.notes || '') + ` [VOIDED: ${reason || 'Admin voided'}]` }
       });
 
       const saleItems = await tx.saleItem.findMany({ where: { saleId } });
