@@ -236,7 +236,7 @@ router.get('/:id', authenticateToken, enforceStoreContext, async (req, res) => {
       purchase_price: si.purchasePrice,
       taxable_amount: si.taxableAmount,
       tax_rate: si.taxRate,
-      price_includes_gst: si.priceIncludesGst,
+      price_includes_gst: 0,
       cgst: si.cgst,
       sgst: si.sgst,
       igst: si.igst,
@@ -718,7 +718,7 @@ router.post('/', authenticateToken, enforceStoreContext, async (req, res) => {
                   saleId, itemType: 'phone', phoneId: v.phone.id, imei1: v.phone.imei1,
                   brand: v.phone.brand, model: v.phone.model, variant: v.phone.variant, conditionGrade: v.phone.conditionGrade,
                   unitCost: v.unit_cost, sellingPrice: v.selling_price, discount: v.discount,
-                  taxableAmount: v.taxable_amount, taxRate: v.tax_rate, priceIncludesGst: 0,
+                  taxableAmount: v.taxable_amount, taxRate: v.tax_rate,
                   cgst: v.cgst, sgst: v.sgst, igst: v.igst, totalTax: v.total_tax, finalPrice: v.final_price,
                   quantity: 1, warrantyPeriodMonths: v.phone.warrantyPeriodMonths || 6, warrantyExpiry
                 }
