@@ -3,9 +3,8 @@ node_modules/
 server/node_modules/
 client/node_modules/
 
-# Production build artifacts
+# Production build artifacts (client/dist committed for Kloudbean)
 dist/
-client/dist/
 build/
 
 # Environment files
