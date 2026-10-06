@@ -56,15 +56,6 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Root landing route
-app.get('/', (req, res) => {
-  res.json({
-    status: 'online',
-    message: 'Ecofone POS API Server is Live & Running!',
-    healthCheck: '/api/health'
-  });
-});
-
 // Health Check
 app.get('/api/health', async (req, res) => {
   try {
@@ -111,8 +102,17 @@ const clientDistPath = path.resolve(__dirname, '../../client/dist');
 if (fs.existsSync(clientDistPath)) {
   app.use(express.static(clientDistPath));
   app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api/')) return next();
+    if (req.path.startsWith('/api')) return next();
     res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+} else {
+  // Fallback root route if client build is not generated yet
+  app.get('/', (req, res) => {
+    res.json({
+      status: 'online',
+      message: 'Ecofone POS API Server is Live & Running!',
+      healthCheck: '/api/health'
+    });
   });
 }
 
