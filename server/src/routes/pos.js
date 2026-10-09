@@ -182,7 +182,7 @@ router.get('/quick-bills', authenticateToken, requireAdmin, async (req, res) => 
 router.put('/quick-bills/:saleItemId', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const saleItemId = parseInt(req.params.saleItemId);
-    const { purchase_price, supplier_id, notes } = req.body;
+    const { purchase_price, refurb_cost, supplier_id, notes } = req.body;
 
     if (!purchase_price || parseFloat(purchase_price) <= 0) {
       return res.status(400).json({ success: false, message: 'A valid purchase price is required to reconcile.' });
@@ -197,6 +197,8 @@ router.put('/quick-bills/:saleItemId', authenticateToken, requireAdmin, async (r
     if (!saleItem.isQuickBill) return res.status(400).json({ success: false, message: 'This item is not a Quick Bill entry.' });
 
     const pPrice = parseFloat(purchase_price);
+    const rCost = refurb_cost ? parseFloat(refurb_cost) : 0;
+    const tCost = pPrice + rCost;
 
     await prisma.$transaction(async (tx) => {
       if (saleItem.itemType === 'quick_bill_accessory' || saleItem.accessoryId) {
@@ -216,9 +218,10 @@ router.put('/quick-bills/:saleItemId', authenticateToken, requireAdmin, async (r
           where: { id: saleItem.phoneId },
           data: {
             purchasePrice: pPrice,
-            totalCost: pPrice,
+            refurbishmentCost: rCost,
+            totalCost: tCost,
             supplierId: supplier_id ? parseInt(supplier_id) : null,
-            notes: notes || `Reconciled: Purchase price ₹${pPrice} updated by ${req.user.username}`
+            notes: notes || `Reconciled: Purchase ₹${pPrice} + Refurb ₹${rCost} updated by ${req.user.username}`
           }
         });
       }
@@ -226,15 +229,15 @@ router.put('/quick-bills/:saleItemId', authenticateToken, requireAdmin, async (r
       // Mark the sale item as reconciled (unit cost updated)
       await tx.saleItem.update({
         where: { id: saleItemId },
-        data: { unitCost: pPrice, isQuickBill: 0 }
+        data: { unitCost: saleItem.itemType === 'quick_bill_accessory' || saleItem.accessoryId ? pPrice : tCost, isQuickBill: 0 }
       });
     });
 
     await logAudit(req.user.id, req.user.username, 'RECONCILE_QUICK_BILL', saleItem.sale.storeId, 'SALE_ITEM', String(saleItemId), {
-      brand: saleItem.brand, model: saleItem.model, sellingPrice: saleItem.sellingPrice, purchasePrice: pPrice
+      brand: saleItem.brand, model: saleItem.model, sellingPrice: saleItem.sellingPrice, purchasePrice: pPrice, refurbCost: rCost, totalCost: tCost
     }, req);
 
-    res.json({ success: true, message: `Quick Bill reconciled. Purchase cost of ₹${pPrice.toLocaleString('en-IN')} recorded for ${saleItem.brand} ${saleItem.model}.` });
+    res.json({ success: true, message: `Quick Bill reconciled. Cost of ₹${(saleItem.itemType === 'quick_bill_accessory' || saleItem.accessoryId ? pPrice : tCost).toLocaleString('en-IN')} recorded for ${saleItem.brand} ${saleItem.model}.` });
   } catch (error) {
     console.error('Error reconciling quick bill:', error);
     res.status(400).json({ success: false, message: error.message });

@@ -22,6 +22,7 @@ export default function QuickBillsReconciliation() {
   const [error, setError] = useState('');
   const [reconcileTarget, setReconcileTarget] = useState(null);
   const [purchasePrice, setPurchasePrice] = useState('');
+  const [refurbCost, setRefurbCost] = useState('');
   const [reconcileNotes, setReconcileNotes] = useState('');
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
@@ -51,6 +52,7 @@ export default function QuickBillsReconciliation() {
         method: 'PUT',
         body: JSON.stringify({
           purchase_price: parseFloat(purchasePrice),
+          refurb_cost: refurbCost ? parseFloat(refurbCost) : 0,
           notes: reconcileNotes
         })
       });
@@ -58,6 +60,7 @@ export default function QuickBillsReconciliation() {
         setSuccessMsg(res.message);
         setReconcileTarget(null);
         setPurchasePrice('');
+        setRefurbCost('');
         setReconcileNotes('');
         loadQuickBills();
       } else {
@@ -160,7 +163,7 @@ export default function QuickBillsReconciliation() {
                       <p className="text-sm font-black text-rose-500">{formatCurrency(item.unitCost)} <span className="text-[9px] text-rose-400">(pending)</span></p>
                     </div>
                     <button
-                      onClick={() => { setReconcileTarget(item); setPurchasePrice(''); setReconcileNotes(''); }}
+                      onClick={() => { setReconcileTarget(item); setPurchasePrice(''); setRefurbCost(''); setReconcileNotes(''); }}
                       className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl transition shadow-sm"
                     >
                       <IndianRupee className="w-3.5 h-3.5" />
@@ -211,12 +214,41 @@ export default function QuickBillsReconciliation() {
                   className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-400 outline-none font-mono"
                   autoFocus
                 />
-                {purchasePrice && parseFloat(purchasePrice) > 0 && (
-                  <p className={`mt-1.5 text-[11px] font-bold ${reconcileTarget.sellingPrice - parseFloat(purchasePrice) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    Profit / Loss: {formatCurrency(Math.abs(reconcileTarget.sellingPrice - parseFloat(purchasePrice)))} {reconcileTarget.sellingPrice - parseFloat(purchasePrice) >= 0 ? '✓ Profit' : '✗ Loss'}
-                  </p>
-                )}
               </div>
+
+              {reconcileTarget.itemType !== 'quick_bill_accessory' && !reconcileTarget.accessoryId && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1">Refurbishment Cost (₹) <span className="font-normal text-slate-400">(optional)</span></label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="Enter repair or refurbishing cost"
+                    value={refurbCost}
+                    onChange={e => setRefurbCost(e.target.value)}
+                    className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-400 outline-none font-mono"
+                  />
+                </div>
+              )}
+
+              {purchasePrice && parseFloat(purchasePrice) > 0 && (
+                <div className={`mt-1.5 p-3 rounded-xl border text-xs ${
+                  reconcileTarget.sellingPrice - (parseFloat(purchasePrice) + (parseFloat(refurbCost) || 0)) >= 0 
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
+                  : 'bg-rose-50 border-rose-200 text-rose-800'
+                }`}>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-medium">Total Cost Base:</span>
+                    <span className="font-bold">{formatCurrency(parseFloat(purchasePrice) + (parseFloat(refurbCost) || 0))}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Marginal Profit / Loss:</span>
+                    <span className="font-black">
+                      {formatCurrency(Math.abs(reconcileTarget.sellingPrice - (parseFloat(purchasePrice) + (parseFloat(refurbCost) || 0))))} 
+                      {reconcileTarget.sellingPrice - (parseFloat(purchasePrice) + (parseFloat(refurbCost) || 0)) >= 0 ? ' ✓ Profit' : ' ✗ Loss'}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-bold text-slate-600 mb-1">Notes <span className="font-normal text-slate-400">(optional)</span></label>
