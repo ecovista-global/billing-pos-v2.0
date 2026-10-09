@@ -56,7 +56,10 @@ router.get('/', authenticateToken, enforceStoreContext, async (req, res) => {
         COALESCE(SUM((si.selling_price * COALESCE(si.quantity, 1) - COALESCE(si.discount, 0)) - (si.unit_cost * COALESCE(si.quantity, 1))), 0) as today_profit
       FROM sales sa
       LEFT JOIN sale_items si ON sa.id = si.sale_id
-      WHERE sa.status = 'COMPLETED' AND CAST(sa.sale_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata' AS DATE) = CAST(NOW() AT TIME ZONE 'Asia/Kolkata' AS DATE) ${storeFilter}
+      WHERE sa.status = 'COMPLETED' 
+        AND CAST(sa.sale_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata' AS DATE) = CAST(NOW() AT TIME ZONE 'Asia/Kolkata' AS DATE) 
+        ${storeFilter}
+        AND NOT EXISTS (SELECT 1 FROM sale_items sq WHERE sq.sale_id = sa.id AND sq.is_quick_bill = 1)
     `);
     const today = mapBigIntToNumber(todayRaw[0] || {});
 
@@ -79,7 +82,10 @@ router.get('/', authenticateToken, enforceStoreContext, async (req, res) => {
         COALESCE(SUM((si.selling_price * COALESCE(si.quantity, 1) - COALESCE(si.discount, 0)) - (si.unit_cost * COALESCE(si.quantity, 1))), 0) as total_profit
       FROM sales sa
       LEFT JOIN sale_items si ON sa.id = si.sale_id
-      WHERE sa.status = 'COMPLETED' ${dateFilter} ${storeFilter}
+      WHERE sa.status = 'COMPLETED' 
+        ${dateFilter} 
+        ${storeFilter}
+        AND NOT EXISTS (SELECT 1 FROM sale_items sq WHERE sq.sale_id = sa.id AND sq.is_quick_bill = 1)
     `);
     const overview = mapBigIntToNumber(overviewRaw[0] || {});
 
@@ -133,7 +139,8 @@ router.get('/', authenticateToken, enforceStoreContext, async (req, res) => {
           COALESCE(SUM((si.selling_price * COALESCE(si.quantity, 1) - COALESCE(si.discount, 0)) - (si.unit_cost * COALESCE(si.quantity, 1))), 0) as profit,
           (SELECT COUNT(*) FROM phone_inventory p WHERE p.current_store_id = s.id AND p.stock_status = 'AVAILABLE') as inventory_count
         FROM stores s
-        LEFT JOIN sales sa ON s.id = sa.store_id AND sa.status = 'COMPLETED' ${dateFilter}
+        LEFT JOIN sales sa ON s.id = sa.store_id AND sa.status = 'COMPLETED' ${dateFilter} 
+          AND NOT EXISTS (SELECT 1 FROM sale_items sq WHERE sq.sale_id = sa.id AND sq.is_quick_bill = 1)
         LEFT JOIN sale_items si ON sa.id = si.sale_id
         GROUP BY s.id
         ORDER BY revenue DESC
@@ -151,6 +158,7 @@ router.get('/', authenticateToken, enforceStoreContext, async (req, res) => {
       FROM sales sa
       JOIN sale_items si ON sa.id = si.sale_id
       WHERE sa.status = 'COMPLETED' AND sa.sale_date >= (NOW() AT TIME ZONE 'Asia/Kolkata') - INTERVAL '30 days' ${storeFilter}
+        AND NOT EXISTS (SELECT 1 FROM sale_items sq WHERE sq.sale_id = sa.id AND sq.is_quick_bill = 1)
       GROUP BY CAST(sa.sale_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata' AS DATE)
       ORDER BY date ASC
     `);

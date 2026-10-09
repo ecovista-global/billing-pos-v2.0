@@ -216,7 +216,7 @@ export default function QuickBillsReconciliation() {
                 />
               </div>
 
-              {reconcileTarget.itemType !== 'quick_bill_accessory' && !reconcileTarget.accessoryId && (
+              {reconcileTarget.phoneId && (
                 <div>
                   <label className="block text-xs font-bold text-slate-600 mb-1">Refurbishment Cost (₹) <span className="font-normal text-slate-400">(optional)</span></label>
                   <input
@@ -232,19 +232,19 @@ export default function QuickBillsReconciliation() {
 
               {purchasePrice && parseFloat(purchasePrice) > 0 && (
                 <div className={`mt-1.5 p-3 rounded-xl border text-xs ${
-                  reconcileTarget.sellingPrice - (parseFloat(purchasePrice) + (parseFloat(refurbCost) || 0)) >= 0 
+                  reconcileTarget.sellingPrice - (parseFloat(purchasePrice) + (reconcileTarget.phoneId ? (parseFloat(refurbCost) || 0) : 0)) >= 0 
                   ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
                   : 'bg-rose-50 border-rose-200 text-rose-800'
                 }`}>
                   <div className="flex justify-between items-center mb-1">
                     <span className="font-medium">Total Cost Base:</span>
-                    <span className="font-bold">{formatCurrency(parseFloat(purchasePrice) + (parseFloat(refurbCost) || 0))}</span>
+                    <span className="font-bold">{formatCurrency(parseFloat(purchasePrice) + (reconcileTarget.phoneId ? (parseFloat(refurbCost) || 0) : 0))}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="font-medium">Marginal Profit / Loss:</span>
                     <span className="font-black">
-                      {formatCurrency(Math.abs(reconcileTarget.sellingPrice - (parseFloat(purchasePrice) + (parseFloat(refurbCost) || 0))))} 
-                      {reconcileTarget.sellingPrice - (parseFloat(purchasePrice) + (parseFloat(refurbCost) || 0)) >= 0 ? ' ✓ Profit' : ' ✗ Loss'}
+                      {formatCurrency(Math.abs(reconcileTarget.sellingPrice - (parseFloat(purchasePrice) + (reconcileTarget.phoneId ? (parseFloat(refurbCost) || 0) : 0))))} 
+                      {reconcileTarget.sellingPrice - (parseFloat(purchasePrice) + (reconcileTarget.phoneId ? (parseFloat(refurbCost) || 0) : 0)) >= 0 ? ' ✓ Profit' : ' ✗ Loss'}
                     </span>
                   </div>
                 </div>

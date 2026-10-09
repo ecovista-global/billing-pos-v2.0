@@ -28,6 +28,7 @@ import {
 export default function Sidebar({ isOpen, setIsOpen }) {
   const { user, logout, isAdmin, canAccess } = useAuth();
   const [storesCount, setStoresCount] = useState(null);
+  const [quickBillsCount, setQuickBillsCount] = useState(null);
   const location = useLocation();
 
   useEffect(() => {
@@ -36,6 +37,14 @@ export default function Sidebar({ isOpen, setIsOpen }) {
         .then(res => {
           if (res.success && Array.isArray(res.stores)) {
             setStoresCount(res.stores.length);
+          }
+        })
+        .catch(() => {});
+        
+      apiFetch('/sales/quick-bills')
+        .then(res => {
+          if (res.success && Array.isArray(res.quick_bills)) {
+            setQuickBillsCount(res.quick_bills.length);
           }
         })
         .catch(() => {});
@@ -64,7 +73,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
     { label: 'Expenses', path: '/admin/expenses', icon: Wallet },
     { label: 'Profit & Loss', path: '/admin/profit-loss', icon: TrendingUp },
     { label: 'Business Reports', path: '/admin/reports', icon: BarChart3 },
-    { label: 'Bill Reconciliation', path: '/admin/quick-bills', icon: Activity },
+    { label: 'Bill Reconciliation', path: '/admin/quick-bills', icon: Activity, badge: quickBillsCount > 0 ? quickBillsCount : null },
     { label: 'Audit Logs', path: '/admin/audit-logs', icon: History },
     { label: 'Company Settings', path: '/admin/settings', icon: Settings },
   ];
@@ -156,7 +165,12 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                 `}
               >
                 <Icon className={`w-4 h-4 shrink-0 ${item.highlight ? 'text-white' : ''}`} />
-                <span className="truncate">{item.label}</span>
+                <span className="truncate flex-1">{item.label}</span>
+                {item.badge && (
+                  <span className="bg-rose-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md min-w-[20px] text-center shrink-0">
+                    {item.badge}
+                  </span>
+                )}
               </NavLink>
             );
           })}
