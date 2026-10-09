@@ -25,8 +25,10 @@ import IMEILifecycleModal from '../../components/ui/IMEILifecycleModal';
 export default function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { selectedStoreId } = useStoreContext();
+  const { selectedStoreId, setSelectedStoreId, stores } = useStoreContext();
   const [period, setPeriod] = useState('all'); // 'today', 'yesterday', '7days', '30days', 'this_month', 'all', 'custom'
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const isAdmin = currentUser.role === 'admin' || currentUser.role === 'super_admin';
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [sortKey, setSortKey] = useState('revenue');
@@ -114,6 +116,24 @@ export default function Dashboard() {
             Real-time analytics across all active Ecofone smartphone retail stores in India
           </p>
         </div>
+
+        {isAdmin && (
+          <div className="flex items-center gap-2">
+            <Store className="w-4 h-4 text-slate-400" />
+            <select
+              value={selectedStoreId || ''}
+              onChange={(e) => setSelectedStoreId(e.target.value ? Number(e.target.value) : null)}
+              className="text-xs font-semibold bg-slate-50 border border-slate-200 text-slate-700 py-1.5 px-3 rounded-lg outline-none focus:ring-2 focus:ring-emerald-400"
+            >
+              <option value="">All Stores (Consolidated)</option>
+              {stores.filter(s => s.status !== 'archived').map(store => (
+                <option key={store.id} value={store.id}>
+                  {store.name} ({store.code})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {}
         <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold overflow-x-auto">

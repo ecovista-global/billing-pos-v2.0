@@ -10,7 +10,7 @@ export function StoreProvider({ children }) {
   const [stores, setStores] = useState([]);
 
   useEffect(() => {
-    if (user?.role === 'admin') {
+    if (user?.role === 'admin' || user?.role === 'super_admin') {
       apiFetch('/stores').then(r => setStores(r.stores || [])).catch(() => {});
     } else if (user?.assigned_store_id) {
       setSelectedStoreId(user.assigned_store_id);
@@ -20,7 +20,7 @@ export function StoreProvider({ children }) {
   return (
     <StoreContext.Provider value={{ 
       selectedStoreId, 
-      setSelectedStoreId: user?.role === 'admin' ? setSelectedStoreId : () => {},
+      setSelectedStoreId: (user?.role === 'admin' || user?.role === 'super_admin') ? setSelectedStoreId : () => {},
       stores,
       isAllStores: selectedStoreId === null
     }}>
