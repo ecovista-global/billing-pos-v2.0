@@ -81,30 +81,6 @@ export default function Invoices() {
     }
   };
 
-  const handleDeleteInvoice = async (sale) => {
-    const confirmDelete = window.confirm(
-      `Are you sure you want to permanently delete this Tax Invoice?\n\n` +
-      `Invoice #: ${sale.invoice_number}\n` +
-      `Customer: ${sale.customer_name || 'N/A'}\n` +
-      `Amount: ${formatCurrency(sale.grand_total)}\n\n` +
-      `This will completely remove the bill, payments, warranty, and sale records without restrictions.`
-    );
-    if (!confirmDelete) return;
-
-    try {
-      const res = await apiFetch(`/sales/${sale.id}`, {
-        method: 'DELETE'
-      });
-      if (res.success) {
-        alert(res.message || 'Invoice deleted permanently.');
-        fetchSales();
-      } else {
-        alert(res.message || 'Failed to delete invoice.');
-      }
-    } catch (err) {
-      alert(err.message || 'Error occurred while deleting invoice.');
-    }
-  };
 
   return (
     <div className="space-y-5">
@@ -238,15 +214,6 @@ export default function Invoices() {
                             </button>
                           )}
 
-                          {isAdmin && (
-                            <button
-                              onClick={() => handleDeleteInvoice(sale)}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
-                              title="Delete Bill Permanently"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
                         </div>
                       </td>
                     </tr>

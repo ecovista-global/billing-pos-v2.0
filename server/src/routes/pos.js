@@ -844,59 +844,6 @@ router.post('/:id/void', authenticateToken, enforceStoreContext, requireDeletePe
   }
 });
 
-// DELETE /api/sales/:id (Permanent Delete Bill / Invoice - Admin only)
-router.delete('/:id', authenticateToken, enforceStoreContext, requireDeletePermission('invoices'), async (req, res) => {
-  try {
-    const saleId = parseInt(req.params.id);
-    const sale = await prisma.sale.findUnique({ where: { id: saleId } });
-    if (!sale) return res.status(404).json({ success: false, message: 'Sale invoice not found.' });
-
-    await prisma.$transaction(async (tx) => {
-      // 1. Delete linked warranties
-      await tx.warranty.deleteMany({ where: { saleId } });
-      
-      // 2. Delete linked returns and return items
-      const rets = await tx.return.findMany({ where: { saleId }, select: { id: true } });
-      if (rets.length > 0) {
-        const retIds = rets.map(r => r.id);
-        await tx.returnItem.deleteMany({ where: { returnId: { in: retIds } } });
-        await tx.return.deleteMany({ where: { saleId } });
-      }
-
-      // 3. Delete or unlink exchanged phones linked to this invoice
-      await tx.exchangedPhone.deleteMany({ where: { saleId } });
-
-      // 4. Delete payments
-      await tx.payment.deleteMany({ where: { saleId } });
-
-      // 5. Delete sale items
-      const saleItems = await tx.saleItem.findMany({ where: { saleId } });
-      await tx.saleItem.deleteMany({ where: { saleId } });
-
-      // 6. Adjust customer statistics if customer exists
-      const customer = await tx.customer.findUnique({ where: { id: sale.customerId } });
-      if (customer) {
-        await tx.customer.update({
-          where: { id: sale.customerId },
-          data: {
-            totalPurchases: Math.max(0, customer.totalPurchases - saleItems.length),
-            totalSpent: Math.max(0, customer.totalSpent - sale.grandTotal)
-          }
-        });
-      }
-
-      // 7. Delete the sale record itself
-      await tx.sale.delete({ where: { id: saleId } });
-    });
-
-    await logAudit(req.user.id, req.user.username, 'DELETE_INVOICE', sale.storeId, 'SALE', String(saleId), { invoiceNumber: sale.invoiceNumber, grandTotal: sale.grandTotal }, req);
-
-    res.json({ success: true, message: `Invoice ${sale.invoiceNumber} deleted permanently.` });
-  } catch (error) {
-    console.error('Error deleting invoice:', error);
-    res.status(400).json({ success: false, message: error.message });
-  }
-});
 
 // GET /api/sales/quick-bills - List all unreconciled Quick Bill items (Admin only)
 router.get('/quick-bills', authenticateToken, requireAdmin, async (req, res) => {
