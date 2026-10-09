@@ -4,22 +4,22 @@ const prisma = require('../db/prisma');
 const { authenticateToken, requireAdmin, requireSuperAdmin, requireDeletePermission, logAudit } = require('../middleware/auth');
 const { enforceStoreContext } = require('../middleware/storeContext');
 
-// Robust, collision-free internal product ID generator
 async function generateNextPhoneProductId() {
-  const result = await prisma.$queryRawUnsafe(`
-    SELECT MAX(seq) as max_seq FROM (
-      SELECT id as seq FROM phone_inventory
-      UNION ALL
-      SELECT CAST(SUBSTR(internal_product_id, 8) AS INTEGER) as seq 
-      FROM phone_inventory 
-      WHERE internal_product_id LIKE 'ECO-PH-%'
-    )
-  `);
+  const last = await prisma.phoneInventory.findFirst({
+    orderBy: { id: 'desc' },
+    select: { internalProductId: true }
+  });
   
-  const maxSeqObj = result[0];
-  let nextSeq = (maxSeqObj && maxSeqObj.max_seq !== null) ? Number(maxSeqObj.max_seq) + 1 : 1;
-  let candidate = `ECO-PH-${String(nextSeq).padStart(5, '0')}`;
+  let nextSeq = 1;
+  if (last && last.internalProductId) {
+    const parts = last.internalProductId.split('-');
+    if (parts.length === 3 && parts[1] === 'PH') {
+      const parsed = parseInt(parts[2], 10);
+      if (!isNaN(parsed)) nextSeq = parsed + 1;
+    }
+  }
 
+  let candidate = `ECO-PH-${String(nextSeq).padStart(5, '0')}`;
   while (await prisma.phoneInventory.findFirst({ where: { internalProductId: candidate } })) {
     nextSeq++;
     candidate = `ECO-PH-${String(nextSeq).padStart(5, '0')}`;
@@ -28,18 +28,20 @@ async function generateNextPhoneProductId() {
 }
 
 async function getNextPhoneSeq() {
-  const result = await prisma.$queryRawUnsafe(`
-    SELECT MAX(seq) as max_seq FROM (
-      SELECT id as seq FROM phone_inventory
-      UNION ALL
-      SELECT CAST(SUBSTR(internal_product_id, 8) AS INTEGER) as seq 
-      FROM phone_inventory 
-      WHERE internal_product_id LIKE 'ECO-PH-%'
-    )
-  `);
+  const last = await prisma.phoneInventory.findFirst({
+    orderBy: { id: 'desc' },
+    select: { internalProductId: true }
+  });
   
-  const maxSeqObj = result[0];
-  return (maxSeqObj && maxSeqObj.max_seq !== null) ? Number(maxSeqObj.max_seq) + 1 : 1;
+  let nextSeq = 1;
+  if (last && last.internalProductId) {
+    const parts = last.internalProductId.split('-');
+    if (parts.length === 3 && parts[1] === 'PH') {
+      const parsed = parseInt(parts[2], 10);
+      if (!isNaN(parsed)) nextSeq = parsed + 1;
+    }
+  }
+  return nextSeq;
 }
 
 // GET /api/inventory (List with filters)
