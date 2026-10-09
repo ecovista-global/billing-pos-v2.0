@@ -476,6 +476,9 @@ export default function AccessoryBulkUploadModal({ isOpen, onClose, stores = [],
       if (res.success) {
         setUploadResult(res);
         if (onSuccess) onSuccess();
+        setTimeout(() => {
+          onClose();
+        }, 1500);
       } else {
         alert(res.message || 'Bulk upload failed.');
       }

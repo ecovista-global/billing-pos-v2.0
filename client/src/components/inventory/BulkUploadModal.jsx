@@ -321,6 +321,9 @@ export default function BulkUploadModal({ isOpen, onClose, stores = [], supplier
       if (res.success) {
         setUploadResult(res);
         if (onSuccess) onSuccess();
+        setTimeout(() => {
+          onClose();
+        }, 1500);
       } else {
         alert(res.message || 'Bulk upload failed.');
       }
