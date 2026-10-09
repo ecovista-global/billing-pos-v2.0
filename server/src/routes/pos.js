@@ -226,11 +226,64 @@ router.put('/quick-bills/:saleItemId', authenticateToken, requireAdmin, async (r
         });
       }
 
-      // Mark the sale item as reconciled (unit cost updated)
+      const isAccessory = saleItem.itemType === 'quick_bill_accessory' || saleItem.accessoryId;
+      
+      let newTaxableAmount = saleItem.taxableAmount;
+      let newTotalTax = saleItem.totalTax;
+      let newCgst = saleItem.cgst;
+      let newSgst = saleItem.sgst;
+      let newIgst = saleItem.igst;
+
+      if (!isAccessory) {
+        const tRate = saleItem.taxRate || 5.0;
+        const inclusiveDifference = Math.max(0, saleItem.finalPrice - tCost);
+        const taxableMargin = inclusiveDifference / (1 + (tRate / 100));
+        newTotalTax = Math.round((taxableMargin * (tRate / 100)) * 100) / 100;
+        newTaxableAmount = Math.round(taxableMargin * 100) / 100;
+        
+        if (saleItem.igst > 0) {
+          newIgst = newTotalTax;
+          newCgst = 0;
+          newSgst = 0;
+        } else {
+          newCgst = Math.round((newTotalTax / 2) * 100) / 100;
+          newSgst = Math.round((newTotalTax - newCgst) * 100) / 100;
+          newIgst = 0;
+        }
+      }
+
+      const diffTaxable = newTaxableAmount - saleItem.taxableAmount;
+      const diffTotalTax = newTotalTax - saleItem.totalTax;
+      const diffCgst = newCgst - saleItem.cgst;
+      const diffSgst = newSgst - saleItem.sgst;
+      const diffIgst = newIgst - saleItem.igst;
+
+      // Mark the sale item as reconciled (unit cost updated) and update taxes
       await tx.saleItem.update({
         where: { id: saleItemId },
-        data: { unitCost: saleItem.itemType === 'quick_bill_accessory' || saleItem.accessoryId ? pPrice : tCost, isQuickBill: 0 }
+        data: { 
+          unitCost: isAccessory ? pPrice : tCost, 
+          isQuickBill: 0,
+          taxableAmount: newTaxableAmount,
+          totalTax: newTotalTax,
+          cgst: newCgst,
+          sgst: newSgst,
+          igst: newIgst
+        }
       });
+
+      if (!isAccessory && diffTotalTax !== 0) {
+        await tx.sale.update({
+          where: { id: saleItem.saleId },
+          data: {
+            taxableAmount: { increment: diffTaxable },
+            totalTax: { increment: diffTotalTax },
+            cgst: { increment: diffCgst },
+            sgst: { increment: diffSgst },
+            igst: { increment: diffIgst }
+          }
+        });
+      }
     });
 
     await logAudit(req.user.id, req.user.username, 'RECONCILE_QUICK_BILL', saleItem.sale.storeId, 'SALE_ITEM', String(saleItemId), {
