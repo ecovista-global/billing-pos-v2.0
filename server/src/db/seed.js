@@ -20,7 +20,7 @@ async function seedSuperAdmin() {
     const newAdmin = await prisma.user.create({
       data: {
         employeeId: 'ECO-ADM-001',
-        username: 'admin',
+        username: 'EcoMasterAdmin',
         passwordHash: passwordHash,
         fullName: 'Super Admin',
         phone: '+91 0000000000',
@@ -46,7 +46,7 @@ async function seedSuperAdmin() {
     });
 
     console.log('Super Admin created successfully!');
-    console.log('Username: admin');
+    console.log('Username: EcoMasterAdmin');
     console.log('Password: Admin@Ecofone#2026!');
 
   } catch (error) {
