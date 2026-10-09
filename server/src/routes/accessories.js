@@ -29,7 +29,7 @@ router.get('/', authenticateToken, async (req, res) => {
 
     const whereClause = {};
 
-    if (req.user.role !== 'admin') {
+    if (!['admin', 'super_admin'].includes(req.user.role)) {
       whereClause.storeId = req.user.assigned_store_id;
     } else if (store_id) {
       whereClause.storeId = parseInt(store_id);
@@ -164,7 +164,7 @@ router.post('/', authenticateToken, async (req, res) => {
 
     if (!name || !category || !brand) return res.status(400).json({ success: false, message: 'Product Name, Category, and Brand are required.' });
 
-    const targetStoreId = req.user.role === 'admin' ? (store_id || req.user.assigned_store_id) : req.user.assigned_store_id;
+    const targetStoreId = ['admin', 'super_admin'].includes(req.user.role) ? (store_id || req.user.assigned_store_id) : req.user.assigned_store_id;
     if (!targetStoreId) return res.status(400).json({ success: false, message: 'Target store is required.' });
 
     const pInclusive = Math.max(0, parseFloat(purchase_price_inclusive) || 0);
@@ -237,7 +237,7 @@ router.post('/bulk-upload', authenticateToken, async (req, res) => {
     const { accessories: items, default_store_id, default_supplier_name } = req.body;
     if (!Array.isArray(items) || items.length === 0) return res.status(400).json({ success: false, message: 'No accessory records provided in upload.' });
 
-    const fallbackStoreId = (req.user.role === 'admin' && default_store_id) ? parseInt(default_store_id, 10) : (req.user.assigned_store_id || 1);
+    const fallbackStoreId = (['admin', 'super_admin'].includes(req.user.role) && default_store_id) ? parseInt(default_store_id, 10) : (req.user.assigned_store_id || 1);
 
     const allStores = await prisma.store.findMany({ select: { id: true, code: true, name: true } });
     const storeMap = {};
@@ -365,7 +365,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
     const existing = await prisma.accessory.findUnique({ where: { id } });
     if (!existing) return res.status(404).json({ success: false, message: 'Accessory not found' });
 
-    if (req.user.role !== 'admin' && req.user.assigned_store_id !== existing.storeId) {
+    if (!['admin', 'super_admin'].includes(req.user.role) && req.user.assigned_store_id !== existing.storeId) {
       return res.status(403).json({ success: false, message: 'You can only edit accessories in your assigned store.' });
     }
 
@@ -391,7 +391,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
     else if (newQty <= minStock) newStatus = 'Low Stock';
 
     let targetStoreId = existing.storeId;
-    if (req.user.role === 'admin' && store_id) {
+    if (['admin', 'super_admin'].includes(req.user.role) && store_id) {
       const validStore = await prisma.store.findUnique({ where: { id: parseInt(store_id) } });
       if (validStore) targetStoreId = validStore.id;
     }
@@ -527,7 +527,7 @@ router.get('/reports/valuation', authenticateToken, async (req, res) => {
   try {
     const { store_id } = req.query;
     let targetStore = null;
-    if (req.user.role !== 'admin') targetStore = req.user.assigned_store_id;
+    if (!['admin', 'super_admin'].includes(req.user.role)) targetStore = req.user.assigned_store_id;
     else if (store_id) targetStore = parseInt(store_id);
 
     let queryCondition = targetStore ? `AND a.store_id = ${targetStore}` : '';
@@ -572,7 +572,7 @@ router.get('/reports/sales', authenticateToken, async (req, res) => {
   try {
     const { store_id, date_from, date_to } = req.query;
     let targetStore = null;
-    if (req.user.role !== 'admin') targetStore = req.user.assigned_store_id;
+    if (!['admin', 'super_admin'].includes(req.user.role)) targetStore = req.user.assigned_store_id;
     else if (store_id) targetStore = parseInt(store_id);
 
     let queryCondition = `WHERE sa.status = 'COMPLETED' AND si.item_type = 'accessory'`;
