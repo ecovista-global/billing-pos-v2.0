@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 async function seedSuperAdmin() {
   try {
     const adminExists = await prisma.user.findFirst({
-      where: { role: 'admin' }
+      where: { role: 'super_admin' }
     });
 
     if (adminExists) {
@@ -15,7 +15,7 @@ async function seedSuperAdmin() {
     }
 
     const salt = bcrypt.genSaltSync(10);
-    const passwordHash = bcrypt.hashSync('admin123', salt); // Default password: admin123
+    const passwordHash = bcrypt.hashSync('Admin@Ecofone#2026!', salt);
 
     const newAdmin = await prisma.user.create({
       data: {
@@ -26,7 +26,7 @@ async function seedSuperAdmin() {
         phone: '+91 0000000000',
         email: 'admin@ecofone.in',
         address: 'HQ',
-        role: 'admin',
+        role: 'super_admin',
         status: 'active',
         permissions: JSON.stringify({
           dashboard: { view: true },
@@ -47,7 +47,7 @@ async function seedSuperAdmin() {
 
     console.log('Super Admin created successfully!');
     console.log('Username: admin');
-    console.log('Password: admin123');
+    console.log('Password: Admin@Ecofone#2026!');
 
   } catch (error) {
     console.error('Error seeding admin:', error);
