@@ -145,6 +145,102 @@ router.get('/', authenticateToken, enforceStoreContext, async (req, res) => {
   }
 });
 
+// GET /api/sales/quick-bills - List all unreconciled Quick Bill items (Admin only)
+router.get('/quick-bills', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { store_id } = req.query;
+    const where = { isQuickBill: 1 };
+    if (store_id) {
+      where.sale = { storeId: parseInt(store_id) };
+    } else if (!req.user.is_super_admin && req.user.assigned_store_id) {
+      where.sale = { storeId: req.user.assigned_store_id };
+    }
+
+    const quickBillItems = await prisma.saleItem.findMany({
+      where,
+      include: {
+        sale: {
+          include: {
+            store: true,
+            customer: true,
+            employee: true
+          }
+        },
+        phone: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json({ success: true, quick_bills: quickBillItems });
+  } catch (error) {
+    console.error('Error fetching quick bills:', error);
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
+
+// PUT /api/sales/quick-bills/:saleItemId - Reconcile Quick Bill by updating purchase cost (Admin only)
+router.put('/quick-bills/:saleItemId', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const saleItemId = parseInt(req.params.saleItemId);
+    const { purchase_price, supplier_id, notes } = req.body;
+
+    if (!purchase_price || parseFloat(purchase_price) <= 0) {
+      return res.status(400).json({ success: false, message: 'A valid purchase price is required to reconcile.' });
+    }
+
+    const saleItem = await prisma.saleItem.findUnique({
+      where: { id: saleItemId },
+      include: { phone: true, sale: true }
+    });
+
+    if (!saleItem) return res.status(404).json({ success: false, message: 'Quick Bill item not found.' });
+    if (!saleItem.isQuickBill) return res.status(400).json({ success: false, message: 'This item is not a Quick Bill entry.' });
+
+    const pPrice = parseFloat(purchase_price);
+
+    await prisma.$transaction(async (tx) => {
+      if (saleItem.itemType === 'quick_bill_accessory' || saleItem.accessoryId) {
+        // Update the placeholder accessory record
+        await tx.accessory.update({
+          where: { id: saleItem.accessoryId },
+          data: {
+            purchasePriceInclusive: pPrice,
+            purchaseTaxableValue: Math.round((pPrice * 100 / (100 + saleItem.taxRate)) * 100) / 100,
+            purchaseGst: pPrice - Math.round((pPrice * 100 / (100 + saleItem.taxRate)) * 100) / 100,
+            supplierId: supplier_id ? parseInt(supplier_id) : null
+          }
+        });
+      } else {
+        // Update the placeholder phone inventory record with actual purchase cost
+        await tx.phoneInventory.update({
+          where: { id: saleItem.phoneId },
+          data: {
+            purchasePrice: pPrice,
+            totalCost: pPrice,
+            supplierId: supplier_id ? parseInt(supplier_id) : null,
+            notes: notes || `Reconciled: Purchase price ₹${pPrice} updated by ${req.user.username}`
+          }
+        });
+      }
+
+      // Mark the sale item as reconciled (unit cost updated)
+      await tx.saleItem.update({
+        where: { id: saleItemId },
+        data: { unitCost: pPrice, isQuickBill: 0 }
+      });
+    });
+
+    await logAudit(req.user.id, req.user.username, 'RECONCILE_QUICK_BILL', saleItem.sale.storeId, 'SALE_ITEM', String(saleItemId), {
+      brand: saleItem.brand, model: saleItem.model, sellingPrice: saleItem.sellingPrice, purchasePrice: pPrice
+    }, req);
+
+    res.json({ success: true, message: `Quick Bill reconciled. Purchase cost of ₹${pPrice.toLocaleString('en-IN')} recorded for ${saleItem.brand} ${saleItem.model}.` });
+  } catch (error) {
+    console.error('Error reconciling quick bill:', error);
+    res.status(400).json({ success: false, message: error.message });
+  }
+});
+
 // GET /api/sales/:id (Full Invoice Details)
 router.get('/:id', authenticateToken, enforceStoreContext, async (req, res) => {
   try {
@@ -845,100 +941,6 @@ router.post('/:id/void', authenticateToken, enforceStoreContext, requireDeletePe
 });
 
 
-// GET /api/sales/quick-bills - List all unreconciled Quick Bill items (Admin only)
-router.get('/quick-bills', authenticateToken, requireAdmin, async (req, res) => {
-  try {
-    const { store_id } = req.query;
-    const where = { isQuickBill: 1 };
-    if (store_id) {
-      where.sale = { storeId: parseInt(store_id) };
-    } else if (!req.user.is_super_admin && req.user.assigned_store_id) {
-      where.sale = { storeId: req.user.assigned_store_id };
-    }
-
-    const quickBillItems = await prisma.saleItem.findMany({
-      where,
-      include: {
-        sale: {
-          include: {
-            store: true,
-            customer: true,
-            employee: true
-          }
-        },
-        phone: true
-      },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    res.json({ success: true, quick_bills: quickBillItems });
-  } catch (error) {
-    console.error('Error fetching quick bills:', error);
-    res.status(400).json({ success: false, message: error.message });
-  }
-});
-
-// PUT /api/sales/quick-bills/:saleItemId - Reconcile Quick Bill by updating purchase cost (Admin only)
-router.put('/quick-bills/:saleItemId', authenticateToken, requireAdmin, async (req, res) => {
-  try {
-    const saleItemId = parseInt(req.params.saleItemId);
-    const { purchase_price, supplier_id, notes } = req.body;
-
-    if (!purchase_price || parseFloat(purchase_price) <= 0) {
-      return res.status(400).json({ success: false, message: 'A valid purchase price is required to reconcile.' });
-    }
-
-    const saleItem = await prisma.saleItem.findUnique({
-      where: { id: saleItemId },
-      include: { phone: true, sale: true }
-    });
-
-    if (!saleItem) return res.status(404).json({ success: false, message: 'Quick Bill item not found.' });
-    if (!saleItem.isQuickBill) return res.status(400).json({ success: false, message: 'This item is not a Quick Bill entry.' });
-
-    const pPrice = parseFloat(purchase_price);
-
-    await prisma.$transaction(async (tx) => {
-      if (saleItem.itemType === 'quick_bill_accessory' || saleItem.accessoryId) {
-        // Update the placeholder accessory record
-        await tx.accessory.update({
-          where: { id: saleItem.accessoryId },
-          data: {
-            purchasePriceInclusive: pPrice,
-            purchaseTaxableValue: Math.round((pPrice * 100 / (100 + saleItem.taxRate)) * 100) / 100,
-            purchaseGst: pPrice - Math.round((pPrice * 100 / (100 + saleItem.taxRate)) * 100) / 100,
-            supplierId: supplier_id ? parseInt(supplier_id) : null
-          }
-        });
-      } else {
-        // Update the placeholder phone inventory record with actual purchase cost
-        await tx.phoneInventory.update({
-          where: { id: saleItem.phoneId },
-          data: {
-            purchasePrice: pPrice,
-            totalCost: pPrice,
-            supplierId: supplier_id ? parseInt(supplier_id) : null,
-            notes: notes || `Reconciled: Purchase price ₹${pPrice} updated by ${req.user.username}`
-          }
-        });
-      }
-
-      // Mark the sale item as reconciled (unit cost updated)
-      await tx.saleItem.update({
-        where: { id: saleItemId },
-        data: { unitCost: pPrice, isQuickBill: 0 }
-      });
-    });
-
-    await logAudit(req.user.id, req.user.username, 'RECONCILE_QUICK_BILL', saleItem.sale.storeId, 'SALE_ITEM', String(saleItemId), {
-      brand: saleItem.brand, model: saleItem.model, sellingPrice: saleItem.sellingPrice, purchasePrice: pPrice
-    }, req);
-
-    res.json({ success: true, message: `Quick Bill reconciled. Purchase cost of ₹${pPrice.toLocaleString('en-IN')} recorded for ${saleItem.brand} ${saleItem.model}.` });
-  } catch (error) {
-    console.error('Error reconciling quick bill:', error);
-    res.status(400).json({ success: false, message: error.message });
-  }
 });
 
 module.exports = router;
