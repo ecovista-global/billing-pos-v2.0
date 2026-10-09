@@ -22,7 +22,7 @@ function mapBigIntToNumber(obj) {
 router.get('/', authenticateToken, enforceStoreContext, async (req, res) => {
   try {
     const { period = 'all', start_date, end_date } = req.query; // 'today', '7days', '30days', 'this_month', 'all', 'custom'
-    const storeId = req.user.role === 'admin' ? null : req.user.assigned_store_id;
+    const storeId = (req.user.role === 'admin' || req.user.role === 'super_admin') ? null : req.user.assigned_store_id;
 
     let dateFilter = '';
     if (period === 'today') {
@@ -118,7 +118,7 @@ router.get('/', authenticateToken, enforceStoreContext, async (req, res) => {
 
     // 3. Store Comparison Table (Admin only)
     let storeComparison = [];
-    if (req.user.role === 'admin') {
+    if (req.user.role === 'admin' || req.user.role === 'super_admin') {
       const storeComparisonRaw = await prisma.$queryRawUnsafe(`
         SELECT 
           s.id as store_id,
