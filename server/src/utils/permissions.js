@@ -14,8 +14,8 @@ const DEFAULT_EMPLOYEE_PERMISSIONS = {
 };
 
 function parseUserPermissions(permissionsStr, role = 'employee') {
-  if (role === 'admin') {
-    // Admin has full universal permissions for view/edit, but preserve custom flags (like delete)
+  if (role === 'super_admin') {
+    // Super Admin has full universal permissions for view/edit, but preserve custom flags (like delete)
     let stored = {};
     try {
       stored = typeof permissionsStr === 'string' ? JSON.parse(permissionsStr) : (permissionsStr || {});

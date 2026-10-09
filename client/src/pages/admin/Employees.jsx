@@ -625,7 +625,14 @@ export default function Employees() {
                   <label className="font-bold text-slate-600 block mb-1">Role *</label>
                   <select
                     value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                    onChange={(e) => {
+                      const newRole = e.target.value;
+                      setFormData({ 
+                        ...formData, 
+                        role: newRole,
+                        assigned_store_id: (newRole === 'admin' || newRole === 'super_admin') ? null : (stores[0]?.id || 1)
+                      });
+                    }}
                     className="w-full px-3 py-2 bg-slate-50 border rounded-lg"
                   >
                     <option value="employee">Store Employee</option>
@@ -662,10 +669,13 @@ export default function Employees() {
                 <div>
                   <label className="font-bold text-slate-600 block mb-1">Assigned Branch *</label>
                   <select
-                    value={formData.assigned_store_id}
-                    onChange={(e) => setFormData({ ...formData, assigned_store_id: parseInt(e.target.value) })}
+                    value={formData.assigned_store_id || ''}
+                    onChange={(e) => setFormData({ ...formData, assigned_store_id: e.target.value ? parseInt(e.target.value) : null })}
                     className="w-full px-3 py-2 bg-slate-50 border rounded-lg"
                   >
+                    {(formData.role === 'admin' || formData.role === 'super_admin') && (
+                      <option value="">Headquarters / All Stores</option>
+                    )}
                     {stores.map(s => (
                       <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
                     ))}
