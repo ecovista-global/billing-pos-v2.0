@@ -25,6 +25,7 @@ import AuditLogs from './pages/admin/AuditLogs';
 import Settings from './pages/admin/Settings';
 import ExchangedPhones from './pages/admin/ExchangedPhones';
 import Accessories from './pages/admin/Accessories';
+import QuickBills from './pages/admin/QuickBills';
 
 // Employee Pages
 import EmployeeDashboard from './pages/employee/Dashboard';
@@ -121,6 +122,7 @@ export default function App() {
               <Route path="admin/expenses" element={<ProtectedRoute requireAdmin><Expenses /></ProtectedRoute>} />
               <Route path="admin/profit-loss" element={<ProtectedRoute requireAdmin><ProfitLoss /></ProtectedRoute>} />
               <Route path="admin/reports" element={<ProtectedRoute requireAdmin><Reports /></ProtectedRoute>} />
+              <Route path="admin/quick-bills" element={<ProtectedRoute requireAdmin><QuickBills /></ProtectedRoute>} />
               <Route path="admin/audit-logs" element={<ProtectedRoute requireAdmin><AuditLogs /></ProtectedRoute>} />
               <Route path="admin/settings" element={<ProtectedRoute requireAdmin><Settings /></ProtectedRoute>} />
 

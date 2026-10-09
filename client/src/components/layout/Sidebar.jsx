@@ -21,7 +21,8 @@ import {
   LogOut,
   UserCheck,
   ShoppingBag,
-  Package
+  Package,
+  Activity
 } from 'lucide-react';
 
 export default function Sidebar({ isOpen, setIsOpen }) {
@@ -63,6 +64,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
     { label: 'Expenses', path: '/admin/expenses', icon: Wallet },
     { label: 'Profit & Loss', path: '/admin/profit-loss', icon: TrendingUp },
     { label: 'Business Reports', path: '/admin/reports', icon: BarChart3 },
+    { label: 'Bill Reconciliation', path: '/admin/quick-bills', icon: Activity },
     { label: 'Audit Logs', path: '/admin/audit-logs', icon: History },
     { label: 'Company Settings', path: '/admin/settings', icon: Settings },
   ];
