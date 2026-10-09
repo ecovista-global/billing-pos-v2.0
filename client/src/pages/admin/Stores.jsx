@@ -10,6 +10,9 @@ export default function Stores() {
   const [showModal, setShowModal] = useState(false);
   const [editStore, setEditStore] = useState(null);
 
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const isSuperAdmin = currentUser.role === 'super_admin';
+
   const [formData, setFormData] = useState({
     name: '',
     code: '',
@@ -110,6 +113,27 @@ export default function Stores() {
       }
     } catch (err) {
       alert(err.message);
+    }
+  };
+
+  const handleDelete = async (st) => {
+    if (st.id === 1) {
+      alert('Primary store cannot be deleted.');
+      return;
+    }
+    
+    if (window.confirm(`Are you sure you want to delete the store "${st.name}"? It will be archived and will not appear in dropdowns, but historical data will be preserved.`)) {
+      try {
+        const res = await apiFetch(`/stores/${st.id}`, { method: 'DELETE' });
+        if (res.success) {
+          alert('Store deleted successfully.');
+          fetchStores();
+        } else {
+          alert(res.message || 'Error deleting store.');
+        }
+      } catch (err) {
+        alert(err.message);
+      }
     }
   };
 
@@ -217,7 +241,15 @@ export default function Stores() {
               </div>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-slate-100 flex justify-end">
+            <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center">
+              {isSuperAdmin && store.id !== 1 ? (
+                <button
+                  onClick={() => handleDelete(store)}
+                  className="px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-xs font-semibold text-rose-700 transition"
+                >
+                  Delete Store
+                </button>
+              ) : <div></div>}
               <button
                 onClick={() => openEditModal(store)}
                 className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 transition"

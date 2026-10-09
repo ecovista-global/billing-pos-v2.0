@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const prisma = require('../db/prisma');
-const { authenticateToken, requireAdmin, logAudit } = require('../middleware/auth');
+const { authenticateToken, requireAdmin, requireSuperAdmin, logAudit } = require('../middleware/auth');
 
 // GET /api/stores
 router.get('/', authenticateToken, async (req, res) => {
@@ -20,7 +20,7 @@ router.get('/', authenticateToken, async (req, res) => {
            JOIN sales sa ON si.sale_id = sa.id 
            WHERE sa.store_id = s.id AND sa.status = 'COMPLETED') as total_profit
         FROM stores s
-        WHERE s.id = ${req.user.assigned_store_id}
+        WHERE s.id = ${req.user.assigned_store_id} AND s.status != 'archived'
       `;
     } else {
       storesRaw = await prisma.$queryRaw`
@@ -34,6 +34,7 @@ router.get('/', authenticateToken, async (req, res) => {
            JOIN sales sa ON si.sale_id = sa.id 
            WHERE sa.store_id = s.id AND sa.status = 'COMPLETED') as total_profit
         FROM stores s
+        WHERE s.status != 'archived'
         ORDER BY s.id ASC
       `;
     }
@@ -219,6 +220,47 @@ router.patch('/:id/status', authenticateToken, requireAdmin, async (req, res) =>
   } catch (err) {
     console.error('Toggle Store Status Error:', err);
     res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+// DELETE /api/stores/:id (Super Admin only - Soft Delete/Archive)
+router.delete('/:id', authenticateToken, requireSuperAdmin, async (req, res) => {
+  try {
+    const storeId = parseInt(req.params.id);
+    
+    // Prevent deleting the main/primary store if it's store ID 1 (optional safety check)
+    if (storeId === 1) {
+      return res.status(400).json({ success: false, message: 'Primary store (ID 1) cannot be deleted.' });
+    }
+
+    const store = await prisma.store.findUnique({ where: { id: storeId } });
+    if (!store) {
+      return res.status(404).json({ success: false, message: 'Store not found.' });
+    }
+    if (store.status === 'archived') {
+      return res.status(400).json({ success: false, message: 'Store is already archived/deleted.' });
+    }
+
+    await prisma.store.update({
+      where: { id: storeId },
+      data: {
+        status: 'archived',
+        deletedAt: new Date()
+      }
+    });
+
+    // Also mark all employees associated with this store as inactive
+    await prisma.user.updateMany({
+      where: { assignedStoreId: storeId },
+      data: { status: 'inactive' }
+    });
+
+    await logAudit(req.user.id, req.user.username, 'DELETE_STORE', storeId, 'STORE', String(storeId), { name: store.name }, req);
+
+    res.json({ success: true, message: 'Store has been deleted/archived successfully.' });
+  } catch (err) {
+    console.error('Delete Store Error:', err);
+    res.status(500).json({ success: false, message: 'Internal Server Error' });
   }
 });
 
