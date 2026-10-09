@@ -254,8 +254,19 @@ router.post('/bulk-upload', authenticateToken, async (req, res) => {
     const importedAccessories = [];
     const failedRows = [];
 
-    const countRow = await prisma.accessory.count();
-    let nextSeq = countRow + 1;
+    const lastAccessory = await prisma.accessory.findFirst({
+      orderBy: { id: 'desc' },
+      select: { accessoryId: true }
+    });
+    
+    let nextSeq = 1;
+    if (lastAccessory && lastAccessory.accessoryId) {
+      const parts = lastAccessory.accessoryId.split('-');
+      if (parts.length === 2) {
+        const parsed = parseInt(parts[1], 10);
+        if (!isNaN(parsed)) nextSeq = parsed + 1;
+      }
+    }
 
     await prisma.$transaction(async (tx) => {
       for (let idx = 0; idx < items.length; idx++) {
