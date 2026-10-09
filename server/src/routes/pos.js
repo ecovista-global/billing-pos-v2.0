@@ -940,8 +940,5 @@ router.post('/:id/void', authenticateToken, enforceStoreContext, requireDeletePe
   }
 });
 
-
-});
-
 module.exports = router;
 
