@@ -9,7 +9,16 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  
+  // 2FA state
+  const [is2FA, setIs2FA] = useState(false);
+  const [pin, setPin] = useState('');
+  const [tempToken, setTempToken] = useState('');
+  const [setupRequired, setSetupRequired] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
+  const [tempSecret, setTempSecret] = useState('');
+
+  const { login, verify2fa } = useAuth();
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -18,14 +27,44 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const user = await login(username, password);
-      if (user.role === 'admin') {
+      const result = await login(username, password);
+      
+      if (result.require2fa) {
+        setIs2FA(true);
+        setTempToken(result.tempToken);
+        setSetupRequired(result.setupRequired);
+        setQrCodeUrl(result.qrCodeUrl);
+        setTempSecret(result.tempSecret);
+        setError('');
+        return;
+      }
+      
+      if (result.user.role === 'admin' || result.user.role === 'super_admin') {
         navigate('/admin/dashboard');
       } else {
         navigate('/employee/dashboard');
       }
     } catch (err) {
       setError(err.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handle2FA = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const result = await verify2fa(tempToken, pin, tempSecret);
+      if (result.user.role === 'admin' || result.user.role === 'super_admin') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/employee/dashboard');
+      }
+    } catch (err) {
+      setError(err.message || '2FA Verification failed.');
     } finally {
       setLoading(false);
     }
@@ -58,8 +97,12 @@ export default function Login() {
         {}
         <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-xl border border-slate-100">
           <div className="mb-6">
-            <h2 className="text-lg font-bold text-slate-900">Sign in to your account</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Enter your employee ID or credentials to continue</p>
+            <h2 className="text-lg font-bold text-slate-900">
+              {is2FA ? (setupRequired ? 'Setup Authenticator' : 'Security Verification') : 'Sign in to your account'}
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {is2FA ? (setupRequired ? 'Scan QR Code and enter 6-digit PIN' : 'Enter your 6-digit Authenticator PIN') : 'Enter your employee ID or credentials to continue'}
+            </p>
           </div>
 
           {error && (
@@ -79,68 +122,117 @@ export default function Login() {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                Username / Employee ID
-              </label>
-              <div className="relative">
-                <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter username or ID"
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter password"
-                  className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200/50 transition"
-                  title={showPassword ? "Hide password" : "View password 👁️"}
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4 text-emerald-700" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full mt-2 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-600 hover:to-teal-600 text-white text-xs font-bold tracking-wide shadow-md hover:shadow-lg transition active:scale-[0.99] flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              ) : (
-                <>
-                  <span>Sign In to Dashboard</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
+          {is2FA ? (
+            <form onSubmit={handle2FA} className="space-y-4">
+              {setupRequired && qrCodeUrl && (
+                <div className="flex flex-col items-center justify-center p-4 bg-slate-50 border rounded-xl mb-4">
+                  <p className="text-xs font-bold text-slate-600 mb-2">Scan with Google Authenticator</p>
+                  <img src={qrCodeUrl} alt="2FA QR Code" className="w-40 h-40" />
+                </div>
               )}
-            </button>
-          </form>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                  6-Digit PIN
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    required
+                    maxLength="6"
+                    value={pin}
+                    onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+                    placeholder="Enter PIN"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-lg tracking-widest text-center font-bold focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                disabled={loading || pin.length < 4}
+                className="w-full mt-2 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-600 hover:to-teal-600 text-white text-xs font-bold tracking-wide shadow-md hover:shadow-lg transition active:scale-[0.99] flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                ) : (
+                  <>
+                    <span>Verify & Login</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setIs2FA(false); setTempToken(''); setPin(''); setError(''); }}
+                className="w-full mt-2 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 transition"
+              >
+                Back to Login
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                  Username / Employee ID
+                </label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    required
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Enter username or ID"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter password"
+                    className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200/50 transition"
+                    title={showPassword ? "Hide password" : "View password 👁️"}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4 text-emerald-700" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full mt-2 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-600 hover:to-teal-600 text-white text-xs font-bold tracking-wide shadow-md hover:shadow-lg transition active:scale-[0.99] flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                ) : (
+                  <>
+                    <span>Sign In to Dashboard</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </form>
+          )}
 
         </div>
 

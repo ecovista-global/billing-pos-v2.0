@@ -406,9 +406,13 @@ export default function Employees() {
                   </td>
 
                   <td className="py-3 px-3">
-                    {emp.role === 'admin' ? (
+                    {emp.role === 'super_admin' ? (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold border bg-indigo-50 text-indigo-700 border-indigo-200">
+                        CEO / Super Admin
+                      </span>
+                    ) : emp.role === 'admin' ? (
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold border bg-purple-50 text-purple-700 border-purple-200">
-                        Super Admin
+                        Admin (Sub-Admin)
                       </span>
                     ) : (
                       <div className="space-y-1">
@@ -625,7 +629,8 @@ export default function Employees() {
                     className="w-full px-3 py-2 bg-slate-50 border rounded-lg"
                   >
                     <option value="employee">Store Employee</option>
-                    <option value="admin">Super Admin / CEO</option>
+                    <option value="admin">Admin (Sub-Admin)</option>
+                    {user?.is_super_admin && <option value="super_admin">Super Admin / CEO</option>}
                   </select>
                 </div>
               </div>

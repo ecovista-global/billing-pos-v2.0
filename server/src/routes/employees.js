@@ -10,7 +10,7 @@ router.get('/', authenticateToken, async (req, res) => {
   try {
     let employeesRaw;
 
-    if (req.user.role !== 'admin') {
+    if (!['admin', 'super_admin'].includes(req.user.role)) {
       employeesRaw = await prisma.$queryRaw`
         SELECT u.id, u.employee_id, u.username, u.full_name, u.phone, u.email, u.address,
                u.role, u.assigned_store_id, u.status, u.permissions, u.created_at,
@@ -55,7 +55,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
 
-    if (req.user.role !== 'admin' && req.user.id !== id) {
+    if (!['admin', 'super_admin'].includes(req.user.role) && req.user.id !== id) {
       return res.status(403).json({ success: false, message: 'Access denied.' });
     }
 
@@ -338,8 +338,12 @@ router.put('/:id/permissions', authenticateToken, requireAdmin, async (req, res)
       return res.status(404).json({ success: false, message: 'Employee not found.' });
     }
 
-    if (target.role === 'admin') {
-      return res.status(400).json({ success: false, message: 'Super Administrators always have full universal access and cannot be restricted.' });
+    if (target.role === 'super_admin') {
+      return res.status(403).json({ success: false, message: 'CEO / Top Super Admin permissions cannot be modified.' });
+    }
+
+    if (target.role === 'admin' && req.user.role !== 'super_admin') {
+      return res.status(403).json({ success: false, message: 'Only the CEO can modify Sub-Admin permissions.' });
     }
 
     if (!permissions || typeof permissions !== 'object') {

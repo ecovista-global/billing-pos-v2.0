@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const speakeasy = require('speakeasy');
+const QRCode = require('qrcode');
 const prisma = require('../db/prisma');
 const { authenticateToken, JWT_SECRET, logAudit } = require('../middleware/auth');
 const { parseUserPermissions } = require('../utils/permissions');
@@ -105,16 +107,32 @@ router.post('/login', async (req, res) => {
       const tempToken = jwt.sign(
         { id: user.id, isTemp2FA: true },
         JWT_SECRET,
-        { expiresIn: '5m' }
+        { expiresIn: '15m' }
       );
 
       await logAudit(user.id, user.username, '2FA_CHALLENGE_ISSUED', user.assignedStoreId, 'USER', String(user.id), '2FA challenge issued to Super Admin', req);
 
+      if (!user.twoFactorSecret) {
+        const secret = speakeasy.generateSecret({ name: 'EcoFone (' + user.username + ')' });
+        const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url);
+
+        return res.json({
+          success: true,
+          require2fa: true,
+          setupRequired: true,
+          qrCodeUrl,
+          tempSecret: secret.base32,
+          tempToken,
+          message: 'Setup Google Authenticator 2FA.'
+        });
+      }
+
       return res.json({
         success: true,
         require2fa: true,
+        setupRequired: false,
         tempToken,
-        message: 'Super Admin 2FA Verification Required. Enter your 6-digit Security PIN.'
+        message: 'Enter your 6-digit Authenticator code.'
       });
     }
 
@@ -181,14 +199,39 @@ router.post('/verify-2fa', async (req, res) => {
       return res.status(403).json({ success: false, message: 'Access denied.' });
     }
 
-    // Verify PIN from settings
-    const pinSetting = await prisma.setting.findUnique({ where: { key: 'super_admin_2fa_pin' } });
-    const masterPin = (pinSetting && pinSetting.value) ? pinSetting.value.trim() : '982341';
-
     const cleanCode = String(code).trim();
-    if (cleanCode !== masterPin) {
-      await logAudit(user.id, user.username, '2FA_VERIFICATION_FAILED', user.assignedStoreId, 'USER', String(user.id), 'Invalid 2FA security PIN attempt', req);
-      return res.status(401).json({ success: false, message: 'Invalid 2FA Security PIN. Access denied.' });
+    let isVerified = false;
+    let newSecret = null;
+
+    if (!user.twoFactorSecret) {
+      if (!req.body.tempSecret) {
+         return res.status(400).json({ success: false, message: 'Temp secret required for setup.' });
+      }
+      isVerified = speakeasy.totp.verify({
+        secret: req.body.tempSecret,
+        encoding: 'base32',
+        token: cleanCode
+      });
+      if (isVerified) newSecret = req.body.tempSecret;
+    } else {
+      isVerified = speakeasy.totp.verify({
+        secret: user.twoFactorSecret,
+        encoding: 'base32',
+        token: cleanCode,
+        window: 1
+      });
+    }
+
+    if (!isVerified) {
+      await logAudit(user.id, user.username, '2FA_VERIFICATION_FAILED', user.assignedStoreId, 'USER', String(user.id), 'Invalid Authenticator code', req);
+      return res.status(401).json({ success: false, message: 'Invalid Authenticator code.' });
+    }
+
+    if (newSecret) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { twoFactorSecret: newSecret }
+      });
     }
 
     const fullToken = jwt.sign(

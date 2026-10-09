@@ -784,7 +784,7 @@ router.post('/', authenticateToken, enforceStoreContext, async (req, res) => {
 });
 
 // POST /api/sales/:id/void (Void Invoice - Admin only)
-router.post('/:id/void', authenticateToken, enforceStoreContext, requireAdmin, async (req, res) => {
+router.post('/:id/void', authenticateToken, enforceStoreContext, requireDeletePermission('invoices'), async (req, res) => {
   try {
     const saleId = parseInt(req.params.id);
     const { reason } = req.body;

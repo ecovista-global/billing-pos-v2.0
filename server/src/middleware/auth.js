@@ -84,8 +84,13 @@ function requireDeletePermission(moduleKey) {
       return res.status(403).json({ success: false, message: 'Super Admin 2FA verification required for this operation.', require2fa: true });
     }
     
-    // Allow normal admin to delete by default, unless explicitly denied
+    // Allow normal admin to delete by default, unless explicitly denied, except for critical modules
     if (req.user && req.user.role === 'admin') {
+      const restrictedModules = ['invoices', 'sales', 'returns', 'inventory'];
+      if (restrictedModules.includes(moduleKey)) {
+         return res.status(403).json({ success: false, message: 'Access denied. Deleting bills and critical records is restricted to the CEO (Super Admin) only.' });
+      }
+
       const userPerms = typeof req.user.permissions === 'object' ? req.user.permissions : {};
       if (moduleKey && userPerms[moduleKey] && userPerms[moduleKey].delete === false) {
         return res.status(403).json({ success: false, message: `Access denied. You have been restricted from deleting ${moduleKey}.` });

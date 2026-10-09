@@ -8,7 +8,7 @@ router.get('/', authenticateToken, async (req, res) => {
   try {
     let storesRaw;
 
-    if (req.user.role !== 'admin') {
+    if (!['admin', 'super_admin'].includes(req.user.role)) {
       storesRaw = await prisma.$queryRaw`
         SELECT s.*, 
           (SELECT COUNT(*) FROM phone_inventory p WHERE p.current_store_id = s.id AND p.stock_status = 'AVAILABLE') as available_inventory_count,
@@ -61,7 +61,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const storeId = parseInt(req.params.id);
 
-    if (req.user.role !== 'admin' && req.user.assigned_store_id !== storeId) {
+    if (!['admin', 'super_admin'].includes(req.user.role) && req.user.assigned_store_id !== storeId) {
       return res.status(403).json({ success: false, message: 'Access denied to other stores.' });
     }
 

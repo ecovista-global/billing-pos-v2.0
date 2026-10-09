@@ -41,9 +41,27 @@ export function AuthProvider({ children }) {
       localStorage.setItem('ecofone_token', res.token);
       localStorage.setItem('ecofone_user', JSON.stringify(res.user));
       setUser(res.user);
-      return res.user;
+      return { success: true, user: res.user };
+    } else if (res.success && res.require2fa) {
+      return { success: true, require2fa: true, tempToken: res.tempToken, message: res.message, qrCodeUrl: res.qrCodeUrl, setupRequired: res.setupRequired, tempSecret: res.tempSecret };
     } else {
       throw new Error(res.message || 'Login failed');
+    }
+  }
+
+  async function verify2fa(tempToken, code, tempSecret = null) {
+    const res = await apiFetch('/auth/verify-2fa', {
+      method: 'POST',
+      body: JSON.stringify({ tempToken, code, tempSecret })
+    });
+
+    if (res.success && res.token) {
+      localStorage.setItem('ecofone_token', res.token);
+      localStorage.setItem('ecofone_user', JSON.stringify(res.user));
+      setUser(res.user);
+      return { success: true, user: res.user };
+    } else {
+      throw new Error(res.message || '2FA Verification failed');
     }
   }
 
@@ -80,6 +98,7 @@ export function AuthProvider({ children }) {
       user, 
       setUser, 
       login, 
+      verify2fa,
       logout, 
       loading, 
       isAdmin: user?.role === 'admin' || user?.role === 'super_admin',
