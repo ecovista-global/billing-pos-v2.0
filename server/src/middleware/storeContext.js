@@ -4,7 +4,7 @@ function enforceStoreContext(req, res, next) {
     isAllStores: false
   };
 
-  if (req.user.role === 'admin') {
+  if (req.user.role === 'admin' || req.user.role === 'super_admin') {
     if (req.query.store_id && !isNaN(parseInt(req.query.store_id))) {
       req.storeContext.store_id = parseInt(req.query.store_id);
     } else {
