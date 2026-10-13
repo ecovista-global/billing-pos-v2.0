@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Lock, User, ArrowRight, Eye, EyeOff, ShieldAlert } from 'lucide-react';
 
@@ -236,10 +236,20 @@ export default function Login() {
 
         </div>
 
-        {}
-        <p className="text-center text-xs text-slate-500 mt-6">
-          Ecofone Retail Operations • Centralized Multi-Store POS System
-        </p>
+        <div className="text-center mt-6 space-y-2">
+          <p className="text-xs text-slate-500">
+            Ecofone Retail Operations • Centralized Multi-Store POS System
+          </p>
+          <div>
+            <Link
+              to="/careers"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-800 transition"
+            >
+              <span>Explore Careers at Eco DigiTech & EcoFone</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
 
       </div>
     </div>

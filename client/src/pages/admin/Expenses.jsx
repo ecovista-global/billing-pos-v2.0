@@ -113,7 +113,13 @@ export default function Expenses() {
         </div>
 
         <button
-          onClick={() => setShowModal(true)}
+          onClick={() => {
+            setFormData(prev => ({
+              ...prev,
+              store_id: selectedStoreId || user?.assigned_store_id || ''
+            }));
+            setShowModal(true);
+          }}
           className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition cursor-pointer"
         >
           <Plus className="w-4 h-4" />
@@ -126,7 +132,7 @@ export default function Expenses() {
         <div className="flex items-center justify-between mb-2 px-1">
           <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
             <Building2 className="w-3.5 h-3.5 text-slate-400" />
-            {selectedStore ? (
+            {selectedStoreId ? (
               <span>Category Breakdown: <strong className="text-emerald-700">{currentStoreName || 'Selected Store'}</strong></span>
             ) : (
               <span className="text-slate-500">Category Breakdown — <strong className="text-slate-800">All Stores (Company-Wide)</strong></span>
@@ -186,40 +192,57 @@ export default function Expenses() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {expenses.map(exp => (
-                <tr key={exp.id} className="hover:bg-slate-50/70 transition">
-                  <td className="py-3 px-4 text-slate-600 font-medium">
-                    {formatDate(exp.expense_date)}
+              {loading ? (
+                <tr>
+                  <td colSpan={isAdmin ? 7 : 6} className="py-12 text-center text-slate-400 font-medium">
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+                      <span>Loading expense records...</span>
+                    </div>
                   </td>
-                  <td className="py-3 px-3 font-bold text-slate-800">
-                    <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] border">
-                      {exp.category}
-                    </span>
-                  </td>
-                  <td className="py-3 px-3 font-medium text-slate-900">
-                    {exp.description}
-                  </td>
-                  <td className="py-3 px-3 text-slate-600 font-medium">
-                    {exp.store_name || 'Company HQ'}
-                  </td>
-                  <td className="py-3 px-3 text-right font-extrabold text-slate-900 text-sm">
-                    {formatCurrency(exp.amount)}
-                  </td>
-                  <td className="py-3 px-4 text-center font-mono text-[10px] text-slate-400">
-                    {exp.receipt_number || '-'}
-                  </td>
-                  {isAdmin && (
-                    <td className="py-3 px-3 text-center">
-                      <button
-                        onClick={() => handleDelete(exp.id)}
-                        className="text-slate-400 hover:text-rose-600 p-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  )}
                 </tr>
-              ))}
+              ) : expenses.length === 0 ? (
+                <tr>
+                  <td colSpan={isAdmin ? 7 : 6} className="py-12 text-center text-slate-400 font-medium">
+                    No expense records found.
+                  </td>
+                </tr>
+              ) : (
+                expenses.map(exp => (
+                  <tr key={exp.id} className="hover:bg-slate-50/70 transition">
+                    <td className="py-3 px-4 text-slate-600 font-medium">
+                      {formatDate(exp.expense_date)}
+                    </td>
+                    <td className="py-3 px-3 font-bold text-slate-800">
+                      <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] border">
+                        {exp.category}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 font-medium text-slate-900">
+                      {exp.description}
+                    </td>
+                    <td className="py-3 px-3 text-slate-600 font-medium">
+                      {exp.store_name || 'Company HQ'}
+                    </td>
+                    <td className="py-3 px-3 text-right font-extrabold text-slate-900 text-sm">
+                      {formatCurrency(exp.amount)}
+                    </td>
+                    <td className="py-3 px-4 text-center font-mono text-[10px] text-slate-400">
+                      {exp.receipt_number || '-'}
+                    </td>
+                    {isAdmin && (
+                      <td className="py-3 px-3 text-center">
+                        <button
+                          onClick={() => handleDelete(exp.id)}
+                          className="text-slate-400 hover:text-rose-600 p-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

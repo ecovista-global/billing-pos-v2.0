@@ -5,6 +5,7 @@ import { StoreProvider } from './context/StoreContext';
 
 import Layout from './components/layout/Layout';
 import Login from './pages/auth/Login';
+import Careers from './pages/public/Careers';
 
 // Admin Pages
 import Dashboard from './pages/admin/Dashboard';
@@ -99,6 +100,7 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/careers" element={<Careers />} />
 
             {/* Protected Routes Wrapper */}
             <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
