@@ -22,7 +22,8 @@ import {
   UserCheck,
   ShoppingBag,
   Package,
-  Activity
+  Activity,
+  Globe
 } from 'lucide-react';
 
 export default function Sidebar({ isOpen, setIsOpen }) {
@@ -74,6 +75,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
     { label: 'Profit & Loss', path: '/admin/profit-loss', icon: TrendingUp },
     { label: 'Business Reports', path: '/admin/reports', icon: BarChart3 },
     { label: 'Bill Reconciliation', path: '/admin/quick-bills', icon: Activity, badge: quickBillsCount > 0 ? quickBillsCount : null },
+    { label: 'Online Orders & App', path: '/admin/online-orders', icon: Globe },
     { label: 'Audit Logs', path: '/admin/audit-logs', icon: History },
     { label: 'Company Settings', path: '/admin/settings', icon: Settings },
   ];

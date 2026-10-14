@@ -27,3 +27,8 @@ scratch/
 .vercel/
 .neon
 .env.local
+
+*.pem
+*.xlsx
+~$*
+*.pdf

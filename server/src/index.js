@@ -22,6 +22,7 @@ const dashboardRoutes = require('./routes/dashboard');
 const settingsRoutes = require('./routes/settings');
 const exchangeRoutes = require('./routes/exchanges');
 const accessoryRoutes = require('./routes/accessories');
+const onlineOrderRoutes = require('./routes/online-orders');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -37,7 +38,7 @@ app.use(cors({
     callback(null, true);
   },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
   credentials: true
 }));
 
@@ -84,6 +85,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/exchanges', exchangeRoutes);
 app.use('/api/accessories', accessoryRoutes);
+app.use('/api/online', onlineOrderRoutes);
 
 // Serve static frontend build if present (Unified Single-Port Deployment)
 const clientDistPath = path.resolve(__dirname, '../../client/dist');
