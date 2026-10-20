@@ -32,3 +32,5 @@ scratch/
 *.xlsx
 ~$*
 *.pdf
+*.exe
+

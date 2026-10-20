@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Search, Key, UserCheck, UserX, Phone, Mail, Building2, Eye, EyeOff, Copy, Check, X, ShieldAlert, ShieldCheck, Unlock } from 'lucide-react';
+import { Users, Plus, Search, Key, UserCheck, UserX, Phone, Mail, Building2, Eye, EyeOff, Copy, Check, X, ShieldAlert, ShieldCheck, Unlock, Edit3, Store, MapPin } from 'lucide-react';
 import { apiFetch } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { formatCurrency, formatDate } from '../../utils/formatters';
@@ -83,6 +83,20 @@ export default function Employees() {
   const [showCreatePassword, setShowCreatePassword] = useState(false);
   const [showResetPasswordInput, setShowResetPasswordInput] = useState(false);
 
+  // Edit Employee & Reassign Store Modal State
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingEmp, setEditingEmp] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    full_name: '',
+    phone: '',
+    email: '',
+    address: '',
+    role: 'employee',
+    assigned_store_id: '',
+    status: 'active'
+  });
+  const [editLoading, setEditLoading] = useState(false);
+
   const togglePasswordVisibility = (id) => {
     setRevealedPasswords(prev => ({
       ...prev,
@@ -105,7 +119,7 @@ export default function Employees() {
     email: '',
     address: '',
     role: 'employee',
-    assigned_store_id: 1,
+    assigned_store_id: '',
     status: 'active'
   });
 
@@ -201,11 +215,17 @@ export default function Employees() {
       }
     }
 
+    if (formData.role === 'employee' && !formData.assigned_store_id) {
+      alert('Please select an assigned store branch for this employee.');
+      return;
+    }
+
     try {
       const res = await apiFetch('/employees', {
         method: 'POST',
         body: JSON.stringify({
           ...formData,
+          assigned_store_id: formData.assigned_store_id ? parseInt(formData.assigned_store_id, 10) : null,
           phone: formData.phone ? formData.phone.replace(/\D/g, '').slice(0, 10) : ''
         })
       });
@@ -219,7 +239,7 @@ export default function Employees() {
           email: '',
           address: '',
           role: 'employee',
-          assigned_store_id: stores[0]?.id || 1,
+          assigned_store_id: '',
           status: 'active'
         });
         fetchEmployees();
@@ -229,6 +249,71 @@ export default function Employees() {
       }
     } catch (err) {
       alert(err.message);
+    }
+  };
+
+  const openEditModal = (emp) => {
+    setEditingEmp(emp);
+    setEditFormData({
+      full_name: emp.full_name || '',
+      phone: emp.phone || '',
+      email: emp.email || '',
+      address: emp.address || '',
+      role: emp.role || 'employee',
+      assigned_store_id: emp.assigned_store_id ? String(emp.assigned_store_id) : '',
+      status: emp.status || 'active'
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateEmployee = async (e) => {
+    e.preventDefault();
+
+    if (!editFormData.full_name?.trim()) {
+      alert('Full Name is required.');
+      return;
+    }
+
+    if (editFormData.phone) {
+      const cleanPhone = editFormData.phone.replace(/\D/g, '');
+      if (cleanPhone.length !== 10) {
+        alert('Phone number must be exactly 10 digits.');
+        return;
+      }
+    }
+
+    if (editFormData.role === 'employee' && !editFormData.assigned_store_id) {
+      alert('Please select a valid store branch for this staff member.');
+      return;
+    }
+
+    setEditLoading(true);
+    try {
+      const res = await apiFetch(`/employees/${editingEmp.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          full_name: editFormData.full_name.trim(),
+          phone: editFormData.phone ? editFormData.phone.replace(/\D/g, '').slice(0, 10) : '',
+          email: editFormData.email?.trim() || null,
+          address: editFormData.address?.trim() || null,
+          role: editFormData.role,
+          assigned_store_id: editFormData.assigned_store_id ? parseInt(editFormData.assigned_store_id, 10) : null,
+          status: editFormData.status
+        })
+      });
+
+      if (res.success) {
+        setShowEditModal(false);
+        setEditingEmp(null);
+        await fetchEmployees();
+        alert('Employee details and store branch assignment updated successfully!');
+      } else {
+        alert(res.message || 'Failed to update employee.');
+      }
+    } catch (err) {
+      alert(err.message || 'An error occurred while updating employee.');
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -447,14 +532,26 @@ export default function Employees() {
                   </td>
 
                   <td className="py-3 px-3 font-medium text-slate-700">
-                    {emp.store_name ? (
+                    <div className="flex items-center justify-between gap-1.5 group">
                       <div>
-                        <span>{emp.store_name}</span>
-                        <span className="text-[10px] text-slate-400 block">{emp.store_city} ({emp.store_code})</span>
+                        {emp.store_name ? (
+                          <>
+                            <span className="font-bold text-slate-800 block">{emp.store_name}</span>
+                            <span className="text-[10px] text-slate-400 block">{emp.store_city} ({emp.store_code})</span>
+                          </>
+                        ) : (
+                          <span className="text-slate-400 italic">Headquarters</span>
+                        )}
                       </div>
-                    ) : (
-                      <span className="text-slate-400 italic">Headquarters</span>
-                    )}
+                      <button
+                        type="button"
+                        onClick={() => openEditModal(emp)}
+                        className="p-1 rounded-md text-slate-300 hover:text-emerald-700 hover:bg-emerald-50 transition border border-transparent hover:border-emerald-200"
+                        title="Click to change / re-assign branch"
+                      >
+                        <Building2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </td>
 
                   <td className="py-3 px-3 text-right font-semibold text-slate-700">
@@ -506,7 +603,7 @@ export default function Employees() {
 
                   <td className="py-3 px-4 text-center">
                     <div className="flex items-center justify-center gap-1">
-                      {}
+                      {/* Unlock Account */}
                       {emp.locked_until && new Date(emp.locked_until) > new Date() && (
                         <button
                           type="button"
@@ -518,7 +615,17 @@ export default function Employees() {
                         </button>
                       )}
 
-                      {}
+                      {/* Edit Employee & Re-assign Store */}
+                      <button
+                        type="button"
+                        onClick={() => openEditModal(emp)}
+                        className="p-1.5 text-blue-600 hover:text-white hover:bg-blue-600 rounded-lg transition border border-blue-200 bg-blue-50/60 shadow-2xs"
+                        title="Edit Employee & Re-assign Store Branch"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+
+                      {/* Disable / Enable */}
                       <button
                         onClick={() => handleToggleStatus(emp)}
                         disabled={emp.role === 'admin' && emp.id === user?.id}
@@ -536,7 +643,7 @@ export default function Employees() {
                         )}
                       </button>
 
-                      {}
+                      {/* View Credentials */}
                       <button
                         onClick={() => setViewPasswordModalUser(emp)}
                         className="p-1.5 text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition"
@@ -545,7 +652,7 @@ export default function Employees() {
                         <Eye className="w-4 h-4" />
                       </button>
 
-                      {}
+                      {/* Reset Password */}
                       <button
                         onClick={() => { setTargetUser(emp); setShowResetModal(true); }}
                         className="p-1.5 text-slate-400 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition"
@@ -630,7 +737,7 @@ export default function Employees() {
                       setFormData({ 
                         ...formData, 
                         role: newRole,
-                        assigned_store_id: (newRole === 'admin' || newRole === 'super_admin') ? null : (stores[0]?.id || 1)
+                        assigned_store_id: (newRole === 'admin' || newRole === 'super_admin') ? '' : ''
                       });
                     }}
                     className="w-full px-3 py-2 bg-slate-50 border rounded-lg"
@@ -670,15 +777,25 @@ export default function Employees() {
                   <label className="font-bold text-slate-600 block mb-1">Assigned Branch *</label>
                   <select
                     value={formData.assigned_store_id || ''}
-                    onChange={(e) => setFormData({ ...formData, assigned_store_id: e.target.value ? parseInt(e.target.value) : null })}
+                    required={formData.role === 'employee'}
+                    onChange={(e) => setFormData({ ...formData, assigned_store_id: e.target.value ? parseInt(e.target.value) : '' })}
                     className="w-full px-3 py-2 bg-slate-50 border rounded-lg"
                   >
-                    {(formData.role === 'admin' || formData.role === 'super_admin') && (
-                      <option value="">Headquarters / All Stores</option>
+                    {(formData.role === 'admin' || formData.role === 'super_admin') ? (
+                      <>
+                        <option value="">Headquarters / All Stores</option>
+                        {stores.map(s => (
+                          <option key={s.id} value={s.id}>{s.name} ({s.code}) - {s.city}</option>
+                        ))}
+                      </>
+                    ) : (
+                      <>
+                        <option value="">-- Select Store Branch * --</option>
+                        {stores.map(s => (
+                          <option key={s.id} value={s.id}>{s.name} ({s.code}) - {s.city}</option>
+                        ))}
+                      </>
                     )}
-                    {stores.map(s => (
-                      <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
-                    ))}
                   </select>
                 </div>
                 <div>
@@ -847,6 +964,198 @@ export default function Employees() {
                 Done
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Employee & Re-assign Store Branch Modal */}
+      {showEditModal && editingEmp && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 max-w-lg w-full p-6 text-xs space-y-4">
+            <div className="flex items-center justify-between border-b pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-blue-50 text-blue-700">
+                  <Edit3 className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900">Edit Staff & Store Assignment</h3>
+                  <p className="text-[10px] text-slate-400 font-mono">
+                    {editingEmp.full_name} • {editingEmp.employee_id} ({editingEmp.username})
+                  </p>
+                </div>
+              </div>
+              <button 
+                type="button"
+                onClick={() => { setShowEditModal(false); setEditingEmp(null); }}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateEmployee} className="space-y-3.5">
+              {/* Highlighted Store Branch Reassignment Box */}
+              <div className="p-3.5 bg-blue-50/70 rounded-xl border border-blue-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-blue-950 flex items-center gap-1.5 text-xs">
+                    <Store className="w-4 h-4 text-blue-700" />
+                    <span>Assigned Store Branch *</span>
+                  </label>
+                  <span className="text-[10px] font-semibold text-blue-700 bg-white px-2 py-0.5 rounded-full border border-blue-200">
+                    Store Assignment
+                  </span>
+                </div>
+                
+                <select
+                  value={editFormData.assigned_store_id || ''}
+                  required={editFormData.role === 'employee'}
+                  onChange={(e) => setEditFormData({ ...editFormData, assigned_store_id: e.target.value })}
+                  className="w-full px-3 py-2 bg-white border border-blue-300 rounded-lg text-slate-900 font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                >
+                  {(editFormData.role === 'admin' || editFormData.role === 'super_admin') && (
+                    <option value="">Central Headquarters (All Stores Access)</option>
+                  )}
+                  {editFormData.role === 'employee' && (
+                    <option value="">-- Select Store Branch * --</option>
+                  )}
+                  {stores.map(s => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} ({s.code}) — {s.city}, {s.state}
+                    </option>
+                  ))}
+                </select>
+
+                <p className="text-[10.5px] text-blue-700 leading-tight">
+                  ℹ️ POS sales, stock access, warranty registrations, and billing invoices for this employee will immediately link to the selected branch.
+                </p>
+              </div>
+
+              {/* Basic Info */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="font-bold text-slate-600 block mb-1">Full Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editFormData.full_name}
+                    onChange={(e) => setEditFormData({ ...editFormData, full_name: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-600 block mb-1">Username (Read-Only)</label>
+                  <input
+                    type="text"
+                    disabled
+                    value={editingEmp.username}
+                    className="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-lg font-mono text-slate-500 cursor-not-allowed"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="font-bold text-slate-600 block mb-1">Phone Number (10 Digits)</label>
+                  <input
+                    type="tel"
+                    maxLength={10}
+                    placeholder="10-digit mobile"
+                    value={editFormData.phone}
+                    onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-600 block mb-1">Role *</label>
+                  <select
+                    value={editFormData.role}
+                    disabled={editingEmp.role === 'super_admin' && !user?.is_super_admin}
+                    onChange={(e) => {
+                      const newRole = e.target.value;
+                      setEditFormData({
+                        ...editFormData,
+                        role: newRole,
+                        assigned_store_id: (newRole === 'admin' || newRole === 'super_admin') ? '' : editFormData.assigned_store_id
+                      });
+                    }}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg"
+                  >
+                    <option value="employee">Store Staff</option>
+                    <option value="admin">Admin (Sub-Admin)</option>
+                    {user?.is_super_admin && <option value="super_admin">Super Admin / CEO</option>}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="font-bold text-slate-600 block mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    placeholder="staff@ecofone.in"
+                    value={editFormData.email}
+                    onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-600 block mb-1">Account Status *</label>
+                  <select
+                    value={editFormData.status}
+                    onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg"
+                  >
+                    <option value="active">Active (Enabled)</option>
+                    <option value="inactive">Disabled (No Access)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-600 block mb-1">Residential / Store Address</label>
+                <input
+                  type="text"
+                  placeholder="Address details..."
+                  value={editFormData.address}
+                  onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const emp = editingEmp;
+                    setShowEditModal(false);
+                    setEditingEmp(null);
+                    setTargetUser(emp);
+                    setShowResetModal(true);
+                  }}
+                  className="px-3 py-1.5 rounded-lg border border-amber-300 text-amber-700 hover:bg-amber-50 font-bold inline-flex items-center gap-1.5"
+                >
+                  <Key className="w-3.5 h-3.5" />
+                  <span>Reset Password</span>
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setShowEditModal(false); setEditingEmp(null); }}
+                    className="px-4 py-2 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={editLoading}
+                    className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-xs transition flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    {editLoading ? 'Saving...' : 'Save & Reassign Store'}
+                  </button>
+                </div>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -169,6 +169,17 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
 
     const generatedId = employee_id || `ECO-EMP-${Math.floor(100 + Math.random() * 900)}`;
     const initialStatus = ['active', 'inactive', 'disabled', 'suspended'].includes(status) ? status : 'active';
+    const empRole = role || 'employee';
+
+    let parsedStoreId = null;
+    if (assigned_store_id !== undefined && assigned_store_id !== null && assigned_store_id !== '' && assigned_store_id !== 'null') {
+      parsedStoreId = parseInt(assigned_store_id, 10);
+      if (isNaN(parsedStoreId)) parsedStoreId = null;
+    }
+
+    if (empRole === 'employee' && !parsedStoreId) {
+      return res.status(400).json({ success: false, message: 'Store staff must be assigned to an active store branch.' });
+    }
 
     const newEmployee = await prisma.user.create({
       data: {
@@ -179,13 +190,13 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
         phone: cleanPhone,
         email: email || null,
         address: address || null,
-        role: role || 'employee',
-        assignedStoreId: assigned_store_id || null,
+        role: empRole,
+        assignedStoreId: parsedStoreId,
         status: initialStatus
       }
     });
 
-    await logAudit(req.user.id, req.user.username, 'CREATE_EMPLOYEE', assigned_store_id, 'USER', String(newEmployee.id), { username, role, status: initialStatus }, req);
+    await logAudit(req.user.id, req.user.username, 'CREATE_EMPLOYEE', parsedStoreId, 'USER', String(newEmployee.id), { username, role: empRole, status: initialStatus, assignedStoreId: parsedStoreId }, req);
 
     res.status(201).json({ success: true, message: 'Employee created successfully.', id: newEmployee.id });
   } catch (err) {
@@ -194,11 +205,20 @@ router.post('/', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
-// PUT /api/employees/:id (Admin only)
+// PUT /api/employees/:id (Admin only - Update profile & Re-assign Store)
 router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const { full_name, phone, email, address, role, assigned_store_id, status } = req.body;
+
+    const existingUser = await prisma.user.findUnique({ where: { id } });
+    if (!existingUser) {
+      return res.status(404).json({ success: false, message: 'Employee not found.' });
+    }
+
+    if (existingUser.role === 'super_admin' && req.user.role !== 'super_admin') {
+      return res.status(403).json({ success: false, message: 'Only CEO / Super Admin can edit Super Admin accounts.' });
+    }
 
     let cleanPhone = null;
     if (phone) {
@@ -208,22 +228,48 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
       }
     }
 
+    let parsedStoreId = null;
+    if (assigned_store_id !== undefined && assigned_store_id !== null && assigned_store_id !== '' && assigned_store_id !== 'null') {
+      parsedStoreId = parseInt(assigned_store_id, 10);
+      if (isNaN(parsedStoreId)) parsedStoreId = null;
+    }
+
+    const targetRole = role || existingUser.role;
+    if (targetRole === 'employee' && !parsedStoreId) {
+      return res.status(400).json({ success: false, message: 'Store staff must be assigned to an active store branch.' });
+    }
+
     await prisma.user.update({
       where: { id },
       data: {
-        fullName: full_name,
+        fullName: full_name !== undefined ? full_name.trim() : existingUser.fullName,
         phone: cleanPhone,
-        email,
-        address,
-        role,
-        assignedStoreId: assigned_store_id || null,
-        status: status || 'active'
+        email: email !== undefined ? (email ? email.trim() : null) : existingUser.email,
+        address: address !== undefined ? (address ? address.trim() : null) : existingUser.address,
+        role: targetRole,
+        assignedStoreId: parsedStoreId,
+        status: status || existingUser.status
       }
     });
 
-    await logAudit(req.user.id, req.user.username, 'UPDATE_EMPLOYEE', assigned_store_id, 'USER', String(id), { full_name, role, status }, req);
+    await logAudit(
+      req.user.id,
+      req.user.username,
+      'UPDATE_EMPLOYEE',
+      parsedStoreId,
+      'USER',
+      String(id),
+      {
+        fullName: full_name,
+        role: targetRole,
+        previousStoreId: existingUser.assignedStoreId,
+        newStoreId: parsedStoreId,
+        status
+      },
+      req
+    );
 
-    res.json({ success: true, message: 'Employee updated successfully.' });
+    res.json({ success: true, message: 'Employee details and store branch assignment updated successfully.' });
   } catch (err) {
     console.error('Update Employee Error:', err);
     res.status(400).json({ success: false, message: err.message });
